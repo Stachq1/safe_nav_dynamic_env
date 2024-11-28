@@ -1,0 +1,146 @@
+Panels:
+  - Class: rviz2/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Object1
+        - /Object1/Namespaces1
+        - /MarkerArray1
+        - /MarkerArray1/Namespaces1
+      Splitter Ratio: 0.538
+    Tree Height: 631
+  - Class: rviz2/Selection
+    Name: Selection
+  - Class: rviz2/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.589
+  - Class: rviz2/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz2/Time
+    Name: Time
+    SyncMode: 0
+    SyncSource: ""
+
+Preferences:
+  PromptSaveOnExit: true
+
+Toolbars:
+  toolButtonStyle: 2
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 1
+      Class: rviz2/Axes
+      Enabled: true
+      Length: 1
+      Name: Map Origin
+      Radius: 0.1
+      Reference Frame: <Fixed Frame>
+      Show Trail: false
+      Value: true
+    - Class: rviz2/Marker
+      Enabled: false
+      Marker Topic: /cloud_visualizer/ground_truth/point
+      Name: Point
+      Namespaces: {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz2/Marker
+      Enabled: false
+      Marker Topic: /cloud_visualizer/ground_truth/cluster
+      Name: Cluster
+      Namespaces: {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz2/Marker
+      Enabled: true
+      Marker Topic: /cloud_visualizer/ground_truth/object
+      Name: Object
+      Namespaces:
+        cloud_0: true
+        cloud_1: false
+        cloud_2: false
+        cloud_3: false
+        cloud_4: false
+        cloud_5: false
+        cloud_6: false
+        cloud_7: false
+        cloud_8: false
+        cloud_9: false
+      Queue Size: 100
+      Value: true
+    - Class: rviz2/MarkerArray
+      Enabled: true
+      Marker Topic: /cloud_visualizer/clusters
+      Name: MarkerArray
+      Namespaces:
+        cloud_0: true
+        cloud_1: false
+        cloud_2: false
+        cloud_3: false
+        cloud_4: false
+        cloud_5: false
+        cloud_6: false
+        cloud_7: false
+        cloud_8: false
+        cloud_9: false
+      Queue Size: 100
+      Value: true
+
+  Enabled: true
+  Global Options:
+    Background Color: 255; 255; 255
+    Default Light: true
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz2/Interact
+      Hide Inactive Objects: true
+    - Class: rviz2/MoveCamera
+    - Class: rviz2/Select
+    - Class: rviz2/FocusCamera
+    - Class: rviz2/Measure
+    - Class: rviz2/SetInitialPose
+      Theta std deviation: 0.2618
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz2/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz2/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+  Value: true
+
+  Views:
+    Current:
+      Class: rviz2/Orbit
+      Distance: 57.86
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.06
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Field of View: 0.785
+      Focal Point:
+        X: 4.6527
+        Y: 3.1562
+        Z: -18.1568
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.01
+      Pitch: 1.0048
+      Target Frame: map
+      Yaw: 3.8769
+    Saved: ~

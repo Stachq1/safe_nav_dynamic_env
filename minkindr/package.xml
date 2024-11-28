@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>minkindr</name>
+  <version>1.0.0</version>
+  <description>minkindr implementation using ament as build sysstem</description>
+
+  <maintainer email="spiasecki@ethz.ch">Stanislaw Piasecki</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>eigen3</depend>
+  <depend>geometry_msgs</depend>
+  <depend>glog</depend>
+  <depend>tf2</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+
