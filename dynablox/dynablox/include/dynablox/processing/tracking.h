@@ -3,6 +3,8 @@
 
 #include "dynablox/common/types.h"
 
+#include <drake/geometry/optimization/hyperellipsoid.h>
+
 namespace dynablox {
 
 class Tracking {
@@ -18,6 +20,8 @@ class Tracking {
     float max_tracking_distance;
   };
 
+  typedef drake::geometry::optimization::Hyperellipsoid Ellipsoid;
+
   explicit Tracking(const Config& config = Config()) : config_(config) {}
 
   /**
@@ -29,6 +33,13 @@ class Tracking {
    * @param cloud_info Cloud info to denote moving points.
    */
   void track(const Cloud& cloud, Clusters& clusters, CloudInfo& cloud_info);
+
+  /**
+   * @brief Compute the minimum volume enclosing ellipsoid of a cluster.
+   *
+   * @param cluster Cluster to compute the MVCE for.
+   */
+  Ellipsoid computeClusterMVCE(const Cloud& cloud, const Cluster& cluster);
 
  private:
   const Config config_;
@@ -60,7 +71,6 @@ class Tracking {
    * @param previous_poses Circular buffer of previous cluster centroid positions.
    */
   voxblox::Point predictNextPosition(const boost::circular_buffer<voxblox::Point>& previous_poses);
-
 };
 
 }  // namespace dynablox

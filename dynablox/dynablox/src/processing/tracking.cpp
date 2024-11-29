@@ -18,6 +18,23 @@ void Tracking::track(const Cloud& cloud, Clusters& clusters,
   }
 }
 
+Tracking::Ellipsoid Tracking::computeClusterMVCE(const Cloud& cloud, const Cluster& cluster) {
+  unsigned int n = cluster.points.size();
+  // TODO: What if n is really small? Can that even happen?
+
+  // Create the points input matrix
+  Eigen::MatrixXd points(2, n);
+  for (unsigned int i = 0; i < n; ++i) {
+    const Point& point = cloud[cluster.points[i]];
+    points(0, i) = point.x;
+    points(1, i) = point.y;
+  }
+
+  // Compute the MVCE
+  Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points);
+  return mvce;
+}
+
 std::vector<voxblox::Point> Tracking::computeCentroids(const Cloud& cloud, Clusters& clusters) {
   std::vector<voxblox::Point> centroids(clusters.size());
   size_t i = 0;
@@ -118,7 +135,7 @@ void Tracking::trackClusterIDs(const Cloud& cloud, Clusters& clusters) {
   }
 }
 
-voxblox::Point predictNextPosition(const boost::circular_buffer<voxblox::Point>& previous_poses) {
+voxblox::Point Tracking::predictNextPosition(const boost::circular_buffer<voxblox::Point>& previous_poses) {
   unsigned int n = previous_poses.size();
 
   // Ensure there are at least two points to calculate velocity
