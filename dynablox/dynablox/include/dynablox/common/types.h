@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 
+#include <boost/circular_buffer.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <voxblox/core/block.h>
@@ -91,12 +92,14 @@ struct BoundingBox {
 
 // Indices of all points in the cloud belonging to this cluster.
 struct Cluster {
-  int id = -1;                // ID of the cluster set during tracking.
-  int track_length = 0;       // Frames this cluster has been tracked.
-  bool valid = false;         // Whether the cluster has met all cluster checks.
-  BoundingBox aabb;           // Axis-aligned bounding box of the cluster.
-  std::vector<int> points;    // Indices of points in cloud.
-  std::vector<Point> voxels;  // Center points of voxels in this cluster.
+  int id = -1;                                                      // ID of the cluster set during tracking.
+  int track_length = 0;                                             // Frames this cluster has been tracked.
+  bool valid = false;                                               // Whether the cluster has met all cluster checks.
+  BoundingBox aabb;                                                 // Axis-aligned bounding box of the cluster.
+  std::vector<int> points;                                          // Indices of points in cloud.
+  std::vector<Point> voxels;                                        // Center points of voxels in this cluster.
+  boost::circular_buffer<voxblox::Point> previous_centroids{10};    // Buffer of last 10 centroids of the cluster (including current)
+  voxblox::Point predicted_pose;                                    // Predicted pose of the cluster
 };
 
 using Clusters = std::vector<Cluster>;

@@ -39,12 +39,28 @@ class Tracking {
   std::vector<int> previous_track_lengths_;
 
   /**
+   * @brief Compute centroids of the clusters
+   *
+   * @param cloud Lidar point cloud.
+   * @param clusters Clusters which centers we find.
+   */
+  std::vector<voxblox::Point> computeCentroids(const Cloud& cloud, Clusters& clusters);
+
+  /**
    * @brief Simple closest association tracking for now.
    *
    * @param cloud Lidar point cloud.
    * @param clusters Current clusters to be tracked.
    */
   void trackClusterIDs(const Cloud& cloud, Clusters& clusters);
+
+  /**
+   * @brief Predict the next centroid of a cluster based on previous positions.
+   *
+   * @param previous_poses Circular buffer of previous cluster centroid positions.
+   */
+  voxblox::Point predictNextPosition(const boost::circular_buffer<voxblox::Point>& previous_poses);
+
 };
 
 }  // namespace dynablox
