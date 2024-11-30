@@ -32,8 +32,8 @@ class MotionDetector {
  public:
   // Config.
   struct Config {
-    Config() : evaluate(false), visualize(true), verbose(true), global_frame_name("map"), sensor_frame_name(""),
-               pointcloud_topic("/pointcloud"), queue_size(1), num_threads(std::thread::hardware_concurrency()), shutdown_after(0) {}
+    Config() : evaluate(false), visualize(true), verbose(true), pointcloud_topic("/pointcloud"), global_frame_name("map"),
+               sensor_frame_name(""), queue_size(1), num_threads(std::thread::hardware_concurrency()), shutdown_after(0) {}
 
     // If true evaluate the performance against GT.
     bool evaluate;
