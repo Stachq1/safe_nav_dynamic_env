@@ -72,6 +72,7 @@ void MotionVisualizer::visualizeAll(const Cloud& cloud,
   visualizeTsdfSlice(slice_height);
   visualizeSlicePoints(cloud, cloud_info);
   visualizeClusters(clusters);
+  visualizeEllipsoids(clusters);
   time_stamp_set_ = false;
 }
 
