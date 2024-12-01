@@ -155,7 +155,7 @@ void MotionVisualizer::visualizeClusters(const Clusters& clusters,
   }
 }
 
-void MotionVisualizer::visualizeEllipsoids(const Clusters& clusters) {
+void MotionVisualizer::visualizeEllipsoids(const Clusters& clusters) const {
   if (ellipsoid_vis_pub_->get_subscription_count() == 0u) {
     return;
   }
