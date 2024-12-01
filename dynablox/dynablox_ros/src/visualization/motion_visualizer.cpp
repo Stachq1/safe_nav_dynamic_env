@@ -48,6 +48,7 @@ void MotionVisualizer::setupRos() {
   tsdf_slice_pub_ = nh_->create_publisher<sensor_msgs::msg::PointCloud2>("slice/tsdf", qos_profile);
   point_slice_pub_ = nh_->create_publisher<visualization_msgs::msg::Marker>("slice/points", qos_profile);
   cluster_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("clusters", qos_profile);
+  ellipsoid_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::Marker>("ellipsoids", qos_profile);
 }
 
 void MotionVisualizer::visualizeAll(const Cloud& cloud,
@@ -151,6 +152,61 @@ void MotionVisualizer::visualizeClusters(const Clusters& clusters,
   }
   if (!array_msg.markers.empty()) {
     cluster_vis_pub_->publish(array_msg);
+  }
+}
+
+void MotionVisualizer::visualizeEllipsoids(const Clusters& clusters) {
+  if (ellipsoid_vis_pub_->get_subscription_count() == 0u) {
+    return;
+  }
+
+  size_t id = 0;
+  for(const Cluster& cluster : clusters) {
+    if (cluster.points.size() > 1u) {
+      // Set message shape, color, type and ID
+      visualization_msgs::msg::Marker msg;
+      msg.action = visualization_msgs::msg::Marker::ADD;
+      msg.type = visualization_msgs::msg::Marker::SPHERE;
+      msg.id = id++;
+      msg.header.stamp = getStamp();
+      msg.header.frame_id = config_.global_frame_name;
+      msg.color = setColor(color_map_.colorLookup(cluster.id));
+
+      // Compute the visualization of the ellipsoid.
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(cluster.mvce_A);
+      Eigen::VectorXd eigenvalues = solver.eigenvalues();
+      Eigen::MatrixXd eigenvectors = solver.eigenvectors();
+
+      // Ensure positive definiteness of the matrix.
+      if ((eigenvalues.array() <= 0).any()) {
+        continue;
+      }
+
+      // Semi-axis lengths in 2D
+      Eigen::Vector2d scales(1.0 / std::sqrt(eigenvalues(0)),
+                             1.0 / std::sqrt(eigenvalues(1)));
+
+      // Scale: Use 2D scales for x and y, and set z to a small flat value
+      msg.scale.x = scales(0) * 2.0;  // Diameter in x
+      msg.scale.y = scales(1) * 2.0;  // Diameter in y
+      msg.scale.z = 0.01;             // Flat in z
+
+      // Orientation: Compute quaternion for 2D rotation
+      double angle = std::atan2(eigenvectors(1, 0), eigenvectors(0, 0));
+      tf2::Quaternion quaternion;
+      quaternion.setRPY(0, 0, angle); // Only rotate around z-axis
+      msg.pose.orientation.x = quaternion.x();
+      msg.pose.orientation.y = quaternion.y();
+      msg.pose.orientation.z = quaternion.z();
+      msg.pose.orientation.w = quaternion.w();
+
+      // Position: Set the center in 2D, z is 0
+      msg.pose.position.x = cluster.mvce_center(0);
+      msg.pose.position.y = cluster.mvce_center(1);
+      msg.pose.position.z = 0.0;
+
+      ellipsoid_vis_pub_->publish(msg);
+    }
   }
 }
 
