@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Find ament_cmake and other necessary packages
 find_package(ament_cmake REQUIRED)
+find_package(drake REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -41,6 +42,11 @@ ament_target_dependencies(${PROJECT_NAME}
   voxblox
 )
 
+# Link Drake to the library
+target_link_libraries(${PROJECT_NAME}
+  drake::drake
+)
+
 # Install the library
 install(TARGETS ${PROJECT_NAME}
   EXPORT export_${PROJECT_NAME}
@@ -54,7 +60,7 @@ install(DIRECTORY include/
 )
 
 # Export the package
-ament_export_dependencies(PCL pcl_conversions sensor_msgs voxblox)
+ament_export_dependencies(drake PCL pcl_conversions sensor_msgs voxblox)
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
 
