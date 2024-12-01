@@ -7,8 +7,10 @@ void Tracking::track(const Cloud& cloud, Clusters& clusters,
   // Associate current to previous cluster ids.
   trackClusterIDs(cloud, clusters);
 
-  // Label the cloud info.
+  // Compute MVCEs, predict cluster velocities and label the cloud info.
   for (Cluster& cluster : clusters) {
+    computeClusterMVCE(cloud, cluster);
+    cluster.est_velocity = predictClusterVelocity(cluster.previous_centroids);
     if (cluster.track_length >= config_.min_track_duration) {
       cluster.valid = true;
       for (int idx : cluster.points) {
@@ -18,7 +20,7 @@ void Tracking::track(const Cloud& cloud, Clusters& clusters,
   }
 }
 
-Tracking::Ellipsoid Tracking::computeClusterMVCE(const Cloud& cloud, const Cluster& cluster) {
+void Tracking::computeClusterMVCE(const Cloud& cloud, Cluster& cluster) {
   unsigned int n = cluster.points.size();
   // TODO: What if n is really small? Can that even happen?
 
@@ -32,11 +34,13 @@ Tracking::Ellipsoid Tracking::computeClusterMVCE(const Cloud& cloud, const Clust
 
   // Compute the MVCE
   Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points);
-  return mvce;
+
+  // Save the MVCE matrix A and center into the cluster
+  cluster.mvce_A = mvce.A();
+  cluster.mvce_center = mvce.center();
 }
 
-std::vector<voxblox::Point> Tracking::computeCentroids(const Cloud& cloud, Clusters& clusters) {
-  std::vector<voxblox::Point> centroids(clusters.size());
+void Tracking::computeCentroids(const Cloud& cloud, Clusters& clusters, std::vector<voxblox::Point>& centroids) {
   size_t i = 0;
   for (Cluster& cluster : clusters) {
     voxblox::Point centroid = {0, 0, 0};
@@ -48,13 +52,12 @@ std::vector<voxblox::Point> Tracking::computeCentroids(const Cloud& cloud, Clust
     cluster.previous_centroids.push_back(centroids[i]);
     ++i;
   }
-
-  return centroids;
 }
 
 void Tracking::trackClusterIDs(const Cloud& cloud, Clusters& clusters) {
   // Compute the centroids of all clusters.
-  std::vector<voxblox::Point> centroids = computeCentroids(cloud, clusters);
+  std::vector<voxblox::Point> centroids(clusters.size());
+  computeCentroids(cloud, clusters, centroids);
 
   // Compute the distances of all clusters. [previous][current]->dist
   struct Association {
@@ -135,25 +138,22 @@ void Tracking::trackClusterIDs(const Cloud& cloud, Clusters& clusters) {
   }
 }
 
-voxblox::Point Tracking::predictNextPosition(const boost::circular_buffer<voxblox::Point>& previous_poses) {
+voxblox::Point Tracking::predictClusterVelocity(const boost::circular_buffer<voxblox::Point>& previous_poses) {
   unsigned int n = previous_poses.size();
+  voxblox::Point est_velocity = voxblox::Point::Zero();
 
   // Ensure there are at least two points to calculate velocity
   if (n < 2) {
-    return previous_poses.back();
+    return est_velocity;
   }
-
-  voxblox::Point velocity = voxblox::Point::Zero();
 
   // Compute average velocity
   for (size_t i = 1; i < n; ++i) {
-      velocity += (previous_poses[i] - previous_poses[i - 1]);
+      est_velocity += (previous_poses[i] - previous_poses[i - 1]);
   }
-  velocity /= (n - 1);
+  est_velocity /= (n - 1);
 
-  // Predict the next position by adding average velocity to the last position
-  voxblox::Point predicted_position = previous_poses.back() + velocity;
-  return predicted_position;
+  return est_velocity;
 }
 
 }  // namespace dynablox

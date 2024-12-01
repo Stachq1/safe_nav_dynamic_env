@@ -99,7 +99,9 @@ struct Cluster {
   std::vector<int> points;                                          // Indices of points in cloud.
   std::vector<Point> voxels;                                        // Center points of voxels in this cluster.
   boost::circular_buffer<voxblox::Point> previous_centroids{10};    // Buffer of last 10 centroids of the cluster (including current)
-  voxblox::Point predicted_pose;                                    // Predicted pose of the cluster
+  voxblox::Point est_velocity;                                      // Estimated x-y velocity of the cluster centroid
+  Eigen::MatrixXd mvce_A;                                           // Quadratic form matrix of MVCE
+  Eigen::VectorXd mvce_center;                                      // Center of the MVCE
 };
 
 using Clusters = std::vector<Cluster>;

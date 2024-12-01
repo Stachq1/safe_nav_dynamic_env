@@ -39,7 +39,7 @@ class Tracking {
    *
    * @param cluster Cluster to compute the MVCE for.
    */
-  Ellipsoid computeClusterMVCE(const Cloud& cloud, const Cluster& cluster);
+  void computeClusterMVCE(const Cloud& cloud, Cluster& cluster);
 
  private:
   const Config config_;
@@ -54,8 +54,9 @@ class Tracking {
    *
    * @param cloud Lidar point cloud.
    * @param clusters Clusters which centers we find.
+   * @param centroids Vector to store the centroids.
    */
-  std::vector<voxblox::Point> computeCentroids(const Cloud& cloud, Clusters& clusters);
+  void computeCentroids(const Cloud& cloud, Clusters& clusters, std::vector<voxblox::Point>& centroids);
 
   /**
    * @brief Simple closest association tracking for now.
@@ -66,11 +67,11 @@ class Tracking {
   void trackClusterIDs(const Cloud& cloud, Clusters& clusters);
 
   /**
-   * @brief Predict the next centroid of a cluster based on previous positions.
+   * @brief Estimate current cluster velocity based on previous cluster positions.
    *
    * @param previous_poses Circular buffer of previous cluster centroid positions.
    */
-  voxblox::Point predictNextPosition(const boost::circular_buffer<voxblox::Point>& previous_poses);
+  voxblox::Point predictClusterVelocity(const boost::circular_buffer<voxblox::Point>& previous_poses);
 };
 
 }  // namespace dynablox
