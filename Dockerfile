@@ -36,7 +36,8 @@ RUN apt update && apt install -y --no-install-recommends drake-dev
 
 # Allow rviz to find the Ogre libraries
 RUN export LD_LIBRARY_PATH=/opt/ros/humble/opt/rviz_ogre_vendor/lib:$LD_LIBRARY_PATH && \
-    export PATH="/opt/drake/bin${PATH:+:${PATH}}"
+    export LD_LIBRARY_PATH=/opt/drake/lib:$LD_LIBRARY_PATH
+
 
 # Remove apt installed Eigen 3.4.0 and install 3.3.7 instead
 RUN rm -rf /usr/include/eigen3 && mv /root/dynablox/eigen3 /usr/include/
