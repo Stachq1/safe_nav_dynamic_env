@@ -36,15 +36,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/.
 
 # Link against other libraries if necessary
 ament_target_dependencies(${PROJECT_NAME}
+  drake
   PCL
   pcl_conversions
   sensor_msgs
   voxblox
-)
-
-# Link Drake to the library
-target_link_libraries(${PROJECT_NAME}
-  drake::drake
 )
 
 # Install the library
