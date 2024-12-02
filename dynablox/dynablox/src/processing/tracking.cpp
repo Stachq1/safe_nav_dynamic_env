@@ -33,7 +33,7 @@ void Tracking::computeClusterMVCE(const Cloud& cloud, Cluster& cluster) {
   }
 
   // Compute the MVCE
-  Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points);
+  Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points, 1e-2);
 
   // Save the MVCE matrix A and center into the cluster
   cluster.mvce_A = mvce.A();
