@@ -22,7 +22,10 @@ void Tracking::track(const Cloud& cloud, Clusters& clusters,
 
 void Tracking::computeClusterMVCE(const Cloud& cloud, Cluster& cluster) {
   unsigned int n = cluster.points.size();
-  // TODO: What if n is really small? Can that even happen?
+  // If n is really small, problem not defined properly.
+  if(n < 4) {
+    return;
+  }
 
   // Create the points input matrix
   Eigen::MatrixXd points(2, n);
