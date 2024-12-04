@@ -40,6 +40,7 @@ motion_detector_node:
     tracking:
       min_track_duration: 0 # frames
       max_tracking_distance: 1.0  # m
+      min_obstacle_size: 10 # number of points
 
     # Evaluation.
     evaluation:

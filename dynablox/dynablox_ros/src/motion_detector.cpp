@@ -101,8 +101,10 @@ void MotionDetector::setupRos() {
   // Tracking config
   nh_->declare_parameter("tracking.min_track_duration", tracking_config_.min_track_duration);
   nh_->declare_parameter("tracking.max_tracking_distance", tracking_config_.max_tracking_distance);
+  nh_->declare_parameter("tracking.min_obstacle_size", tracking_config_.min_obstacle_size);
   nh_->get_parameter("tracking.min_track_duration", tracking_config_.min_track_duration);
   nh_->get_parameter("tracking.max_tracking_distance", tracking_config_.max_tracking_distance);
+  nh_->get_parameter("tracking.min_obstacle_size", tracking_config_.min_obstacle_size);
 
   // Visualization config
   nh_->declare_parameter("visualization.static_point_color", visualizer_config_.static_point_color);

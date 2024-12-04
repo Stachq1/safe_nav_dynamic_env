@@ -23,7 +23,9 @@ void Tracking::track(const Cloud& cloud, Clusters& clusters,
 void Tracking::computeClusterMVCE(const Cloud& cloud, Cluster& cluster) {
   unsigned int n = cluster.points.size();
   // If n is really small, problem not defined properly.
-  if(n < 4) {
+  if(n < config_.min_obstacle_size) {
+    cluster.mvce_A.setZero();
+    cluster.mvce_center.setZero();
     return;
   }
 
@@ -36,7 +38,7 @@ void Tracking::computeClusterMVCE(const Cloud& cloud, Cluster& cluster) {
   }
 
   // Compute the MVCE
-  Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points, 1e-2);
+  Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points, 0.1);
 
   // Save the MVCE matrix A and center into the cluster
   cluster.mvce_A = mvce.A();

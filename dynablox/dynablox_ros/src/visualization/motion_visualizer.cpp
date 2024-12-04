@@ -163,7 +163,7 @@ void MotionVisualizer::visualizeEllipsoids(const Clusters& clusters) const {
 
   size_t id = 0;
   for(const Cluster& cluster : clusters) {
-    if (cluster.points.size() > 1u) {
+    if (!cluster.mvce_A.isZero() && !cluster.mvce_center.isZero()) {
       // Set message shape, color, type and ID
       visualization_msgs::msg::Marker msg;
       msg.action = visualization_msgs::msg::Marker::ADD;

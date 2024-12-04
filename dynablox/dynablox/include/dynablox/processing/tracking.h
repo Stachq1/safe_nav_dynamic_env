@@ -11,13 +11,16 @@ class Tracking {
  public:
   // Config.
   struct Config {
-    Config() : min_track_duration(0), max_tracking_distance(1.f) {}
+    Config() : min_track_duration(0), max_tracking_distance(1.f), min_obstacle_size(10) {}
 
     // Numbers of frames a cluster needs to be tracked to be considered dynamic.
     int min_track_duration;
 
     // Maximum distance a cluster may have moved to be considered a track [m].
     float max_tracking_distance;
+
+    // Minimal number of cluster points to classify as obstacle.
+    int min_obstacle_size;
   };
 
   typedef drake::geometry::optimization::Hyperellipsoid Ellipsoid;
