@@ -37,12 +37,18 @@ void Tracking::computeClusterMVCE(const Cloud& cloud, Cluster& cluster) {
     points(1, i) = point.y;
   }
 
-  // Compute the MVCE
-  Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points, 0.1);
-
-  // Save the MVCE matrix A and center into the cluster
-  cluster.mvce_A = mvce.A();
-  cluster.mvce_center = mvce.center();
+  // TODO: Is it possible to get rid of this exception?
+  try {
+    // Compute the MVCE and save the MVCE matrix A and center into the cluster
+    Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points, 0.1);
+    cluster.mvce_A = mvce.A();
+    cluster.mvce_center = mvce.center();
+  } catch (const std::exception& e) {
+    // If the MVCE computation fails, set the cluster to invalid
+    std::cerr << "Error: " << e.what() << std::endl;
+    cluster.mvce_A.setZero();
+    cluster.mvce_center.setZero();
+  }
 }
 
 void Tracking::computeCentroids(const Cloud& cloud, Clusters& clusters, std::vector<voxblox::Point>& centroids) {
