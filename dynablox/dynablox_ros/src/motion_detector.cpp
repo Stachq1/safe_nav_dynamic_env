@@ -388,7 +388,7 @@ void MotionDetector::publishObstacles(const Clusters& clusters) {
   obstacle_msgs::msg::ObstacleArray obstacle_array;
 
   // Initialize the header with the current timestamp
-  obstacle_array.header.stamp = node->get_clock()->now();
+  obstacle_array.header.stamp = nh_->get_clock()->now();
   obstacle_array.header.frame_id = config_.global_frame_name;
 
   // Loop through each cluster and populate the Obstacle messages
