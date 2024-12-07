@@ -144,7 +144,7 @@ void MotionDetector::setupRos() {
 
   // Publish the obstacles for the controller to use
   const rclcpp::QoS qos_profile(10);
-  obstacle_pub_ = nh_->create_publisher<obstacle_msgs::msg::Marker>("/obstacles", qos_profile);
+  obstacle_pub_ = nh_->create_publisher<obstacle_msgs::msg::ObstacleArray>("/obstacles", qos_profile);
 }
 
 void MotionDetector::pointcloudCallback(
