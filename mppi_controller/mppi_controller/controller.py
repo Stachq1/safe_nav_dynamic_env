@@ -4,6 +4,7 @@ import numpy as np
 from mppi_controller.obstacle import Obstacle
 
 from geometry_msgs.msg import Pose, Point, Twist, Vector3
+from obstacle_msgs.msg import ObstacleArray, Obstacle
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker
 
@@ -13,18 +14,26 @@ class MPPIController(Node):
         self.get_logger().info('MPPIController node has started')
         self.twist_publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
         self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
-        self.timer = self.create_timer(0.3, self.update_state)
+        self.obstacle_subscriber_ = self.create_subscription(
+            ObstacleArray, '/obstacles', self.obstacle_callback, 10
+        )
 
-        self.num_samples = 10000
+        self.num_samples = 5000
         self.horizon = 40
-        self.dt = 0.05
+        self.dt = 0.25
+        self.timer = self.create_timer(self.dt, self.update_state)
 
-        self.curr_state = np.array([0.0, 0.0, 0.0])                                                # Starting position
-        self.goal = np.array([5.0, 5.0, 0.0])                                                      # Goal position
-        self.obstacles = [Obstacle(np.array([1.0, 2.0]), np.array([4.0, 2.0]), 0.4, self.marker_publisher_),
-                          Obstacle(np.array([1.0, 4.0]), np.array([4.0, 3.0]), 0.5, self.marker_publisher_),
-                          Obstacle(np.array([5.0, 4.0]), np.array([4.0, 5.0]), 1.0, self.marker_publisher_)]
+        self.curr_state = np.array([0.0, 0.0, 0.0])
+        self.goal = np.array([5.0, 5.0, 0.0])
+        self.obstacles = []
         self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))    # Previous control commands
+
+    def obstacle_callback(self, msg: ObstacleArray):
+        self.obstacles = []
+        for obs_msg in msg.obstacles:
+            # Convert each obstacle message into an obstacle object
+            self.obstacle.append(Obstacle(obs_msg))
+        return
 
     def dynamics(self, state, control):
         state[:, 0] = state[:, 0] + control[:, 0] * np.cos(state[:, 2]) * self.dt       # x = x + v * cos(theta) * dt

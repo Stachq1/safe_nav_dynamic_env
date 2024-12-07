@@ -1,85 +1,53 @@
 import numpy as np
-
-from geometry_msgs.msg import Pose, Point, Vector3
-from std_msgs.msg import ColorRGBA, Header
-from visualization_msgs.msg import Marker
+from obstacle_msgs.msg import Obstacle
 
 class Obstacle:
-    def __init__(self, start_pos, end_pos, vel, marker_publisher):
-        # Initialize the points that the obstacle will move around
-        self.start_pos = start_pos
-        self.end_pos = end_pos
+    def __init__(self, msg: Obstacle, enlargement_radius=0.5):
+        """
+        Initialize the Obstacle class by enlarging the ellipsoid.
 
-        # Initialize the current position of the obstacle and its velocity
-        self.curr_pos = (start_pos + end_pos) / 2
-        self.vel = vel * (end_pos - start_pos) / np.linalg.norm(end_pos - start_pos)
+        :param msg: The ROS 2 message containing the ellipsoid properties.
+        :param enlargement_radius: The additional radius to enlarge the ellipsoid.
+        """
+        # Extract data from the message
+        self.center = np.array([msg.center.x, msg.center.y])  # Extract the 2D center
+        self.velocity = np.array([msg.velocity.x, msg.velocity.y])  # Extract the 2D velocity
+        self.init_a_matrix = np.array(msg.a_matrix).reshape(2, 2)  # Convert flattened array to 2x2 matrix
 
-        # Generate on ID for each obstacle
-        self.id = np.random.randint(10000)     # TODO: can get repeated!
+        # Enlarge the ellipsoid
+        self.enlarged_a_matrix = self.enlarge_ellipsoid(self.init_a_matrix, enlargement_radius)
 
-        # Initialize the marker publisher
-        self.marker_publisher_ = marker_publisher
+    def enlarge_ellipsoid(self, a_matrix, enlargement_radius):
+        """
+        Enlarge the 2D ellipsoid represented by the a_matrix.
 
-    def move(self, dt):
-        # Move the obstacle based on its velocity
-        self.curr_pos += self.vel * dt
+        :param a_matrix: The 2x2 matrix representing the original ellipsoid.
+        :param enlargement_radius: The radius to enlarge the ellipsoid.
+        :return: The enlarged 2x2 matrix.
+        """
+        # Decompose the matrix to extract the ellipse parameters
+        eigenvalues, eigenvectors = np.linalg.eig(a_matrix)
 
-        # If the obstacle reaches the start/end position, change its direction
-        if np.linalg.norm(self.curr_pos - self.end_pos) < 0.1:
-            self.vel *= -1
-        elif np.linalg.norm(self.curr_pos - self.start_pos) < 0.1:
-            self.vel *= -1
+        # Scale the eigenvalues to enlarge the ellipsoid
+        scaled_eigenvalues = eigenvalues + enlargement_radius
 
-    def get_position(self) -> np.ndarray:
-        return self.curr_pos
+        # Reconstruct the enlarged matrix
+        enlarged_matrix = eigenvectors @ np.diag(scaled_eigenvalues) @ np.linalg.inv(eigenvectors)
+        return enlarged_matrix
 
-    def get_trajectory(self, horizon, dt) -> np.ndarray:
-        trajectory = np.zeros((horizon + 1, 2))
-        curr_pos = np.copy(self.curr_pos)
-        vel = np.copy(self.vel)
-        trajectory[0, :] = curr_pos
+    def get_trajectory(self, horizon, dt):
+        """
+        Compute and return the trajectory of the obstacle over a given horizon.
 
-        for i in range(horizon):
-            # Append the current position to the trajectory list
-            trajectory[i + 1, :] = curr_pos
-
-            # Update the position based on velocity and time step
-            curr_pos += vel * dt
-
-            # Reverse direction if the obstacle reaches either the start or end position
-            if np.linalg.norm(curr_pos - self.end_pos) < 0.1:
-                vel *= -1
-            elif np.linalg.norm(curr_pos - self.start_pos) < 0.1:
-                vel *= -1
-
+        :param horizon: The number of steps to compute.
+        :param dt: The time step size.
+        :return: A list of 2D positions representing the trajectory.
+        """
+        time_steps = np.arange(horizon) * dt
+        trajectory = self.center + np.outer(time_steps, self.velocity)
         return trajectory
 
-    def compute_static_obstacle_cost(self, trajectories, cutoff_distance=0.4):
-        distances = np.linalg.norm(trajectories[:, :, :2] - self.get_position(), axis=2)  # Shape (num_samples, horizon + 1)
-        masked_distances = np.where(distances >= cutoff_distance, np.inf, distances)
-        return np.sum(np.exp(-masked_distances), axis=1)  # Sum over horizon
-
     def compute_dynamic_obstacle_cost(self, trajectories, horizon, dt, cutoff_distance=0.4):
-        distances = np.linalg.norm(trajectories[:, :, :2] - self.get_trajectory(horizon, dt), axis=2)  # Shape (num_samples, horizon + 1)
+        distances = np.linalg.norm(trajectories[:, :, :2] - self.get_trajectory(horizon, dt), axis=2)
         masked_distances = np.where(distances >= cutoff_distance, np.inf, distances)
-        return np.sum(np.exp(-masked_distances), axis=1)  # Sum over horizon
-
-    def visualize_obstacle(self, stamp):
-        # Create and publish a Marker for each obstacle
-        header = Header()
-        header.stamp = stamp
-        header.frame_id = "map"
-
-        marker = Marker(
-            header=header,
-            ns="obstacle",
-            id=self.id,
-            type=Marker.SPHERE,
-            action=Marker.ADD,
-            pose=Pose(position=Point(x=self.curr_pos[0], y=self.curr_pos[1], z=0.0)),
-            scale=Vector3(x=0.3, y=0.3, z=0.3),
-            color=ColorRGBA(r=1.0, g=1.0, b=0.0, a=1.0)
-        )
-
-        # Publish the obstacle marker
-        self.marker_publisher_.publish(marker)
+        return np.sum(np.exp(-masked_distances), axis=1)
