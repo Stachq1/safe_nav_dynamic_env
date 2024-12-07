@@ -401,8 +401,7 @@ void MotionDetector::publishObstacles(const Clusters& clusters) {
     center.y = cluster.mvce_center[1];  // Y component
     center.z = 0.0;  // Set Z to 0 for 2D
 
-    // Flatten 2x2 matrix (MVCE matrix) as a 4-element array
-    obstacle.a_matrix.resize(4);
+    // 2x2 matrix MVCE matrix
     obstacle.a_matrix[0] = cluster.mvce_A(0, 0);  // a11
     obstacle.a_matrix[1] = cluster.mvce_A(0, 1);  // a12
     obstacle.a_matrix[2] = cluster.mvce_A(1, 0);  // a21
