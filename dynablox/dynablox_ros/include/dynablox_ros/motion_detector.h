@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include <obstacle_msgs/msg/obstacle.hpp>
+#include <obstacle_msgs/msg/obstacle_array.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/buffer.h>
@@ -126,10 +128,13 @@ class MotionDetector {
   Eigen::Matrix4f transformStampedToMatrix(
     const geometry_msgs::msg::TransformStamped& transform_stamped);
 
+  void publishObstacles(const Clusters& clusters);
+
   const Config config_;
 
   // ROS.
   rclcpp::Node::SharedPtr nh_;
+  rclcpp::Publisher<obstacle_msgs::msg::ObstacleArray>::SharedPtr obstacle_pub_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_pcl_sub_;
 
   tf2_ros::Buffer tf_buffer_;

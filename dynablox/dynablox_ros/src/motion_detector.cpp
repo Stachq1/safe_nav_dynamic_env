@@ -141,6 +141,10 @@ void MotionDetector::setupRos() {
     [this](const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         this->pointcloudCallback(msg);
     });
+
+  // Publish the obstacles for the controller to use
+  const rclcpp::QoS qos_profile(10);
+  obstacle_pub_ = nh_->create_publisher<obstacle_msgs::msg::Marker>("/obstacles", qos_profile);
 }
 
 void MotionDetector::pointcloudCallback(
@@ -377,6 +381,49 @@ Eigen::Matrix4f MotionDetector::transformStampedToMatrix(const geometry_msgs::ms
   transform.block<3, 3>(0, 0) = q.toRotationMatrix();
 
   return transform;
+}
+
+void MotionDetector::publishObstacles(const Clusters& clusters) {
+  // Create the obstacle array message
+  obstacle_msgs::msg::ObstacleArray obstacle_array;
+
+  // Initialize the header with the current timestamp
+  obstacle_array.header.stamp = node->get_clock()->now();
+  obstacle_array.header.frame_id = config_.global_frame_name;
+
+  // Loop through each cluster and populate the Obstacle messages
+  for (const Cluster &cluster : clusters) {
+    obstacle_msgs::msg::Obstacle obstacle;
+
+    // 2D center of the ellipsoid
+    geometry_msgs::msg::Vector3 center;
+    center.x = cluster.mvce_center[0];  // X component
+    center.y = cluster.mvce_center[1];  // Y component
+    center.z = 0.0;  // Set Z to 0 for 2D
+
+    // Flatten 2x2 matrix (MVCE matrix) as a 4-element array
+    obstacle.a_matrix.resize(4);
+    obstacle.a_matrix[0] = cluster.mvce_A(0, 0);  // a11
+    obstacle.a_matrix[1] = cluster.mvce_A(0, 1);  // a12
+    obstacle.a_matrix[2] = cluster.mvce_A(1, 0);  // a21
+    obstacle.a_matrix[3] = cluster.mvce_A(1, 1);  // a22
+
+    // 2D velocity vector
+    geometry_msgs::msg::Vector3 velocity;
+    velocity.x = cluster.est_velocity[0];  // X component of velocity
+    velocity.y = cluster.est_velocity[1];  // Y component of velocity
+    velocity.z = 0.0;  // Set Z to 0 for 2D
+
+    // Populate obstacle with the center, matrix, and velocity
+    obstacle.center = center;
+    obstacle.velocity = velocity;
+
+    // Add the obstacle to the obstacle array
+    obstacle_array.obstacles.push_back(obstacle);
+  }
+
+  // Publish the obstacle array
+  obstacle_pub_->publish(obstacle_array);
 }
 
 }  // namespace dynablox
