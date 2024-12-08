@@ -58,7 +58,10 @@ void MotionDetector::setupMembers() {
   }
 
   // Visualization.
-  visualizer_ = std::make_shared<MotionVisualizer>(nh_, tsdf_layer_, visualizer_config_);
+  if (config_.visualize) {
+    // Initialize visualizer if visualization is requested.
+    visualizer_ = std::make_shared<MotionVisualizer>(nh_, tsdf_layer_, visualizer_config_);
+  }
 }
 
 void MotionDetector::setupRos() {
