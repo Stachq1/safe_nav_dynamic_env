@@ -97,7 +97,7 @@ class MPPIController(Node):
             trajectories[:, t + 1, :] = self.dynamics(trajectories[:, t, :], controls[:, t, :])
         return trajectories, controls
 
-    def cost_function(self, trajectories, controls, control_cost_weight=1.0, goal_cost_weight=3.0, terminal_goal_cost_weight=6.0, obstacle_cost_weight=1.5):
+    def cost_function(self, trajectories, controls, obstacles, control_cost_weight=1.0, goal_cost_weight=3.0, terminal_goal_cost_weight=6.0, obstacle_cost_weight=1.5):
         # Goal Cost: Euclidean distance from all trajectory steps (except last one) to the goal
         goal_costs = goal_cost_weight * np.sum(np.linalg.norm(trajectories[:, :-1, :2] - self.goal[:2], axis=2), axis=1)
 
@@ -106,7 +106,7 @@ class MPPIController(Node):
 
         # Obstacle Cost: Repulsive cost for each trajectory based on proximity to each obstacle
         obstacle_costs = np.zeros(trajectories.shape[0])  # Shape (num_samples,)
-        for obs in self.obstacles:
+        for obs in obstacles:
             obstacle_costs += obs.compute_dynamic_obstacle_cost(trajectories, self.horizon, self.dt)
         obstacle_costs *= obstacle_cost_weight
 
@@ -115,8 +115,8 @@ class MPPIController(Node):
 
         return goal_costs + terminal_goal_costs + obstacle_costs + control_costs
 
-    def select_best_trajectory(self, trajectories, controls):
-        costs = self.cost_function(trajectories, controls)
+    def select_best_trajectory(self, trajectories, controls, obstacles):
+        costs = self.cost_function(trajectories, controls, obstacles)
         best_index = np.argmin(costs)
         return trajectories[best_index, :, :], controls[best_index, :, :]
 
@@ -183,16 +183,19 @@ class MPPIController(Node):
         # Get the state of the SPOT (create a deep copy)
         state = np.copy(self.curr_state)
 
+        # Get current obstacles (create a deep copy)
+        obstacles = np.copy(self.obstacles)
+
         # Sample trajectories
         trajectories, controls = self.sample_trajectories(state)
-        best_trajectory, best_controls = self.select_best_trajectory(trajectories, controls)
+        best_trajectory, best_controls = self.select_best_trajectory(trajectories, controls, obstacles)
 
         # Update the previous control for the next iteration
         self.prev_controls = best_controls
 
         # Send control command to the spot
         command = RobotCommandBuilder.synchro_velocity_command(v_x=best_controls[0, 0], v_y=0.0, v_rot=best_controls[0, 1])
-        end_time_secs=time.time() + self.dt
+        end_time_secs = time.time() + self.dt
         self.robot_command_client.robot_command(command=command, end_time_secs=end_time_secs)
 
         # Visualize the state
