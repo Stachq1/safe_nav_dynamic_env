@@ -3,7 +3,8 @@ from rclpy.node import Node
 import numpy as np
 from mppi_controller.obstacle import Obstacle
 
-from geometry_msgs.msg import Pose, Point, Twist, Vector3
+from geometry_msgs.msg import Pose, Point, Vector3
+from nav_msgs.msg import Odometry
 from obstacle_msgs.msg import ObstacleArray, Obstacle
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker
@@ -11,22 +12,27 @@ from visualization_msgs.msg import Marker
 class MPPIController(Node):
     def __init__(self):
         super().__init__('mppi_controller')
-        self.get_logger().info('MPPIController node has started')
-        self.twist_publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
-        self.obstacle_subscriber_ = self.create_subscription(
-            ObstacleArray, '/obstacles', self.obstacle_callback, 10
-        )
 
+        # Initialize ROS publishers and subscribers
+        self.get_logger().info('MPPIController node has started')
+        self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
+        self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
+        self.obstacle_subscriber_ = self.create_subscription(ObstacleArray, '/obstacles', self.obstacle_callback, 10)
+
+        # Initialize the MPPI controller parameters
         self.num_samples = 5000
         self.horizon = 40
         self.dt = 0.25
         self.timer = self.create_timer(self.dt, self.update_state)
 
+        # Initialize SPOT stuff
+        # TODO
+
+        # Initialize the current state, goal, obstacles and previous controls
         self.curr_state = np.array([0.0, 0.0, 0.0])
         self.goal = np.array([5.0, 5.0, 0.0])
         self.obstacles = []
-        self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))    # Previous control commands
+        self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
 
     def obstacle_callback(self, msg: ObstacleArray):
         self.obstacles = []
@@ -35,16 +41,31 @@ class MPPIController(Node):
             self.obstacle.append(Obstacle(obs_msg))
         return
 
+    def quaternion_to_euler(self, quaternion):
+        x, y, z, w = quaternion.x, quaternion.y, quaternion.z, quaternion.w
+        yaw = np.arctan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y ** 2 + z ** 2))
+        return yaw
+
+    def odometry_callback(self, msg: Odometry):
+        # Extract the position and orientation from the Odometry message
+        x = msg.pose.pose.position.x
+        y = msg.pose.pose.position.y
+        orientation = msg.pose.pose.orientation
+        # Convert the quaternion to yaw angle
+        yaw = self.quaternion_to_euler(orientation)
+        self.curr_state = np.array([x, y, yaw])
+        return
+
     def dynamics(self, state, control):
         state[:, 0] = state[:, 0] + control[:, 0] * np.cos(state[:, 2]) * self.dt       # x = x + v * cos(theta) * dt
         state[:, 1] = state[:, 1] + control[:, 0] * np.sin(state[:, 2]) * self.dt       # y = y + v * sin(theta) * dt
         state[:, 2] = state[:, 2] + control[:, 1] * self.dt                             # theta = theta + w * dt
         return state
 
-    def sample_trajectories(self):
+    def sample_trajectories(self, state):
         # Initialize the trajectories with the initial state
         trajectories = np.zeros((self.num_samples, self.horizon + 1, 3))
-        trajectories[:, 0, :] = self.curr_state
+        trajectories[:, 0, :] = state
 
         # Compute the controls by taking previous controls, shifting it in time and adding Gaussian noise
         controls = np.zeros((self.num_samples, self.horizon, 2))
@@ -89,7 +110,7 @@ class MPPIController(Node):
     def at_goal(self):
         return np.linalg.norm(self.curr_state[:2] - self.goal[:2]) < 0.1
 
-    def visualize_robot_and_goal(self):
+    def visualize_robot_and_goal(self, state):
         # Create and initialize the Marker for the robot (a small sphere)
         header = Header()
         header.stamp = self.get_clock().now().to_msg()
@@ -102,7 +123,7 @@ class MPPIController(Node):
             id=0,
             type=Marker.SPHERE,
             action=Marker.ADD,
-            pose=Pose(position=Point(x=self.curr_state[0], y=self.curr_state[1], z=0.0)),
+            pose=Pose(position=Point(x=state[0], y=state[1], z=0.0)),
             scale=Vector3(x=0.1, y=0.1, z=0.1),
             color=ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
         )
@@ -146,35 +167,22 @@ class MPPIController(Node):
         self.marker_publisher_.publish(marker)
 
     def update_state(self):
+        # Get the state of the SPOT (create a deep copy)
+        state = np.copy(self.curr_state)
+
         # Sample trajectories
-        trajectories, controls = self.sample_trajectories()
+        trajectories, controls = self.sample_trajectories(state)
         best_trajectory, best_controls = self.select_best_trajectory(trajectories, controls)
 
         # Update the previous control for the next iteration
         self.prev_controls = best_controls
 
-        # Send control command
-        cmd = Twist()
-        cmd.linear.x = best_controls[0, 0]
-        cmd.angular.z = best_controls[0, 1]
-        self.twist_publisher_.publish(cmd)
-
-        # Compute the next state (tweak dimensions to work with vectorized function)
-        self.curr_state = self.dynamics(self.curr_state.reshape(1, -1), best_controls[0, :].reshape(1, -1))
-        self.curr_state = self.curr_state.flatten()
-
-        # Apply random disturbance to position (x, y)
-        # disturbance = np.random.normal(0, 0.001, size=self.curr_state.shape)
-        # self.curr_state = self.curr_state + disturbance
+        # Send control command to the spot
+        # TODO
 
         # Visualize the state
-        self.visualize_robot_and_goal()
+        self.visualize_robot_and_goal(state)
         self.visualize_trajectory(best_trajectory)
-
-        # Move the obstacles and visualize them
-        for obs in self.obstacles:
-            obs.move(self.dt)
-            obs.visualize_obstacle(self.get_clock().now().to_msg())
 
         if self.at_goal() and rclpy.ok():  # Use rclpy.ok() to check if ROS 2 is still running
             rclpy.shutdown()  # Use rclpy.shutdown() to shutdown the ROS 2 node
