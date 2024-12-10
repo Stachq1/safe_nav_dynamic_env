@@ -21,7 +21,11 @@ RUN apt-get update && apt-get install -y \
     vim \
     ros-humble-pcl-ros \
     ros-humble-pcl-conversions \
-    ros-humble-rviz2
+    ros-humble-rviz2 \
+    python3-pip
+
+# Install the pip packages related to SPOT
+RUN python3 -m pip install --upgrade bosdyn-client bosdyn-mission bosdyn-choreography-client bosdyn-orbit
 
 # Download a copy of the Drake GPG signing key and add it to an APT trusted keychain:
 RUN wget -qO- https://drake-apt.csail.mit.edu/drake.asc | gpg --dearmor - \
