@@ -20,17 +20,10 @@ class MPPIController(Node):
     def __init__(self):
         super().__init__('mppi_controller')
 
-        # Initialize ROS publishers and subscribers
-        self.get_logger().info('MPPIController node has started')
-        self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
-        self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
-        self.obstacle_subscriber_ = self.create_subscription(ObstacleArray, '/obstacles', self.obstacle_callback, 10)
-
         # Initialize the MPPI controller parameters
         self.num_samples = 5000
         self.horizon = 40
         self.dt = 0.25
-        self.timer = self.create_timer(self.dt, self.update_state)
 
         # Initialize SPOT stuff
         self.sdk = create_standard_sdk('MPPIController')
@@ -40,6 +33,13 @@ class MPPIController(Node):
         self.lease_keepalive = LeaseKeepAlive(self.lease_client, must_acquire=True, return_at_exit=True)
         self.robot_command_client = self.robot.ensure_client(RobotCommandClient.default_service_name)
         bosdyn.client.util.authenticate(self.robot)
+
+        # Initialize ROS publishers and subscribers
+        self.get_logger().info('MPPIController node has started')
+        self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
+        self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
+        self.obstacle_subscriber_ = self.create_subscription(ObstacleArray, '/obstacles', self.obstacle_callback, 10)
+        self.timer = self.create_timer(self.dt, self.update_state)
 
         # Initialize the current state, goal, obstacles and previous controls
         self.curr_state = np.array([0.0, 0.0, 0.0])
