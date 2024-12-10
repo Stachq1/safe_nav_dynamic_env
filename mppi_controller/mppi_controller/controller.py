@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import numpy as np
+import time
 from mppi_controller.obstacle import Obstacle
 
 from geometry_msgs.msg import Pose, Point, Vector3
@@ -8,6 +9,12 @@ from nav_msgs.msg import Odometry
 from obstacle_msgs.msg import ObstacleArray, Obstacle
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker
+
+# SPOT
+import bosdyn.client.util
+from bosdyn.client import create_standard_sdk
+from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
+from bosdyn.client.robot_command import RobotCommandBuilder, RobotCommandClient
 
 class MPPIController(Node):
     def __init__(self):
@@ -26,11 +33,17 @@ class MPPIController(Node):
         self.timer = self.create_timer(self.dt, self.update_state)
 
         # Initialize SPOT stuff
-        # TODO
+        self.sdk = create_standard_sdk('MPPIController')
+        self.robot = self.sdk.create_robot('192.168.80.3')
+        self.robot_id = self.robot.get_id()
+        self.lease_client = self.robot.ensure_client(LeaseClient.default_service_name)
+        self.lease_keepalive = LeaseKeepAlive(self.lease_client, must_acquire=True, return_at_exit=True)
+        self.robot_command_client = self.robot.ensure_client(RobotCommandClient.default_service_name)
+        bosdyn.client.util.authenticate(self.robot)
 
         # Initialize the current state, goal, obstacles and previous controls
         self.curr_state = np.array([0.0, 0.0, 0.0])
-        self.goal = np.array([5.0, 5.0, 0.0])
+        self.goal = np.array([5.0, 5.0, 0.0])     # TODO: How to handle goal setting?
         self.obstacles = []
         self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
 
@@ -178,7 +191,9 @@ class MPPIController(Node):
         self.prev_controls = best_controls
 
         # Send control command to the spot
-        # TODO
+        command = RobotCommandBuilder.synchro_velocity_command(v_x=best_controls[0, 0], v_y=0.0, v_rot=best_controls[0, 1])
+        end_time_secs=time.time() + self.dt
+        self.robot_command_client.robot_command(command=command, end_time_secs=end_time_secs)
 
         # Visualize the state
         self.visualize_robot_and_goal(state)
