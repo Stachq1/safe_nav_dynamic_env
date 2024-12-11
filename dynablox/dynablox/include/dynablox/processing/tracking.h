@@ -2,8 +2,7 @@
 #define DYNABLOX_PROCESSING_TRACKING_H_
 
 #include "dynablox/common/types.h"
-
-#include <drake/geometry/optimization/hyperellipsoid.h>
+#include "dynablox/minimal_ellipsoid/khach.h"
 
 namespace dynablox {
 
@@ -23,9 +22,8 @@ class Tracking {
     int min_obstacle_size;
   };
 
-  typedef drake::geometry::optimization::Hyperellipsoid Ellipsoid;
-
-  explicit Tracking(const Config& config = Config()) : config_(config) {}
+  explicit Tracking(const Config& config = Config()) : config_(config),
+           Q_(Eigen::MatrixXd::Identity(2, 2)), c_(Eigen::VectorXd::Zero(2)) {}
 
   /**
    * @brief Track all clusters w.r.t. the previous clsuters. Denote the object
@@ -51,6 +49,12 @@ class Tracking {
   std::vector<voxblox::Point> previous_centroids_;
   std::vector<int> previous_ids_;
   std::vector<int> previous_track_lengths_;
+
+  // Khachiyan ellipsoid algorithm helpers
+  MTT<double> Q_;          // Output for the ellipsoid shape matrix
+  VTT<double> c_;          // Output for the ellipsoid center
+  double eps_ = 1e-1;      // Desired convergence precision
+  size_t maxiter_ = 10;    // Maximum number of iterations
 
   /**
    * @brief Compute centroids of the clusters

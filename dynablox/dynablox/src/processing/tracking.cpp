@@ -40,9 +40,9 @@ void Tracking::computeClusterMVCE(const Cloud& cloud, Cluster& cluster) {
   // TODO: Is it possible to get rid of this exception?
   try {
     // Compute the MVCE and save the MVCE matrix A and center into the cluster
-    Tracking::Ellipsoid mvce = Tracking::Ellipsoid::MinimumVolumeCircumscribedEllipsoid(points, 0.1);
-    cluster.mvce_A = mvce.A();
-    cluster.mvce_center = mvce.center();
+    double ceps = KhachiyanAlgo(points, eps_, maxiter_, Q_, c_);
+    cluster.mvce_A = Q_;
+    cluster.mvce_center = c_;
   } catch (const std::exception& e) {
     // If the MVCE computation fails, set the cluster to invalid
     std::cerr << "Error: " << e.what() << std::endl;

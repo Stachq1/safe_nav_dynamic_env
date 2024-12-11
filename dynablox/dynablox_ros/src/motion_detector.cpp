@@ -199,6 +199,11 @@ void MotionDetector::pointcloudCallback(
   tracking_->track(cloud, clusters, cloud_info);
   tracking_timer.Stop();
 
+  // Publishing obstacles to be used by the controller
+  Timer obstacles_timer("motion_detection/obstacles");
+  this->publishObstacles(clusters);
+  obstacles_timer.Stop();
+
   // Integrate ever-free information.
   Timer update_ever_free_timer("motion_detection/update_ever_free");
   ever_free_integrator_->updateEverFreeVoxels(frame_counter_);

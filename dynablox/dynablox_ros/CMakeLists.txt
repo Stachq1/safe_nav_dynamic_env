@@ -11,7 +11,6 @@ add_compile_definitions(GLOG_USE_GLOG_EXPORT)
 
 # Find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(drake REQUIRED)
 find_package(dynablox REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(glog REQUIRED)
@@ -39,7 +38,6 @@ add_library(${PROJECT_NAME}
 
 ament_target_dependencies(${PROJECT_NAME}
   dynablox
-  drake
   geometry_msgs
   tf2_ros
   obstacle_msgs
@@ -75,7 +73,7 @@ install(DIRECTORY launch config
 )
 
 # Export package dependencies
-ament_export_dependencies(drake rclcpp sensor_msgs std_msgs geometry_msgs visualization_msgs tf2_ros obstacle_msgs pcl_conversions voxblox voxblox_ros voxblox_msgs dynablox)
+ament_export_dependencies(rclcpp sensor_msgs std_msgs geometry_msgs visualization_msgs tf2_ros obstacle_msgs pcl_conversions voxblox voxblox_ros voxblox_msgs dynablox)
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
 
