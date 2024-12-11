@@ -2,22 +2,20 @@ import rclpy
 from rclpy.node import Node
 import numpy as np
 import time
-from mppi_controller.obstacle import Obstacle
 
 from geometry_msgs.msg import Pose, Point, Vector3
+from mppi_controller.obstacle import Obstacle
 from nav_msgs.msg import Odometry
 from obstacle_msgs.msg import ObstacleArray, Obstacle
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker
 
 # SPOT
-import bosdyn.client.util
-from bosdyn.client import create_standard_sdk
-from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
-from bosdyn.client.robot_command import RobotCommandBuilder, RobotCommandClient
+from bosdyn.client.robot_command import RobotCommandBuilder, RobotCommandClient, blocking_stand
+from bosdyn.client.time_sync import TimeSyncClient, TimeSyncThread
 
 class MPPIController(Node):
-    def __init__(self):
+    def __init__(self, robot):
         super().__init__('mppi_controller')
 
         # Initialize the MPPI controller parameters
@@ -25,14 +23,17 @@ class MPPIController(Node):
         self.horizon = 40
         self.dt = 0.25
 
-        # Initialize SPOT stuff
-        self.sdk = create_standard_sdk('MPPIController')
-        self.robot = self.sdk.create_robot('192.168.80.3')
-        self.robot_id = self.robot.get_id()
-        self.lease_client = self.robot.ensure_client(LeaseClient.default_service_name)
-        self.lease_keepalive = LeaseKeepAlive(self.lease_client, must_acquire=True, return_at_exit=True)
+        # Ensure time synchronization with SPOT and create command client
+        self.robot = robot
         self.robot_command_client = self.robot.ensure_client(RobotCommandClient.default_service_name)
-        bosdyn.client.util.authenticate(self.robot)
+        self.time_sync_client = self.robot.ensure_client(TimeSyncClient.default_service_name)
+        self.time_sync_thread = TimeSyncThread(self.time_sync_client)
+        self.time_sync_thread.start()
+        self.time_sync_thread.wait_for_sync()
+
+        # Power on robot and stand up
+        robot.power_on(timeout_sec=20)
+        blocking_stand(self.robot_command_client, timeout_sec=10)
 
         # Initialize ROS publishers and subscribers
         self.get_logger().info('MPPIController node has started')
@@ -193,7 +194,7 @@ class MPPIController(Node):
         # Update the previous control for the next iteration
         self.prev_controls = best_controls
 
-        # Send control command to the spot
+        # Send control command to the SPOT
         command = RobotCommandBuilder.synchro_velocity_command(v_x=best_controls[0, 0], v_y=0.0, v_rot=best_controls[0, 1])
         end_time_secs = time.time() + self.dt
         self.robot_command_client.robot_command(command=command, end_time_secs=end_time_secs)
@@ -202,5 +203,7 @@ class MPPIController(Node):
         self.visualize_robot_and_goal(state)
         self.visualize_trajectory(best_trajectory)
 
-        if self.at_goal() and rclpy.ok():  # Use rclpy.ok() to check if ROS 2 is still running
-            rclpy.shutdown()  # Use rclpy.shutdown() to shutdown the ROS 2 node
+        if self.at_goal() and rclpy.ok():
+            # If at goal, sit down and shutdown the node
+            self.robot_command_client.robot_command(RobotCommandBuilder.synchro_sit_command())
+            rclpy.shutdown()
