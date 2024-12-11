@@ -2,7 +2,7 @@ import numpy as np
 from obstacle_msgs.msg import Obstacle
 
 class Obstacle:
-    def __init__(self, msg: Obstacle, enlargement_radius=0.5):
+    def __init__(self, msg: Obstacle, enlargement_radius=0.25):
         """
         Initialize the Obstacle class by enlarging the ellipsoid.
 
