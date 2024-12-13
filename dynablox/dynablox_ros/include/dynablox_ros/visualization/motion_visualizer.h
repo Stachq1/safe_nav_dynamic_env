@@ -102,6 +102,7 @@ class MotionVisualizer {
   void visualizeClusters(const Clusters& clusters,
                          const std::string& ns = "") const;
   void visualizeEllipsoids(const Clusters& clusters) const;
+  void visualizeTrajectories(const Clusters& clusters, double timestep, size_t steps) const;
 
   // ROS msg helper tools.
   static geometry_msgs::msg::Vector3 setScale(const float scale);
@@ -139,6 +140,7 @@ class MotionVisualizer {
   rclcpp::Publisher<voxblox_msgs::msg::Mesh>::SharedPtr mesh_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr cluster_vis_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr ellipsoid_vis_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr trajectory_vis_pub_;
 
   // Variables.
   rclcpp::Time current_stamp_;

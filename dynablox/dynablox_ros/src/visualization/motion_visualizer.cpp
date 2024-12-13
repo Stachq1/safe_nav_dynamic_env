@@ -49,6 +49,7 @@ void MotionVisualizer::setupRos() {
   point_slice_pub_ = nh_->create_publisher<visualization_msgs::msg::Marker>("slice/points", qos_profile);
   cluster_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("clusters", qos_profile);
   ellipsoid_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::Marker>("ellipsoids", qos_profile);
+  trajectory_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/ellipsoid_trajectories", qos_profile);
 }
 
 void MotionVisualizer::visualizeAll(const Cloud& cloud,
@@ -56,23 +57,24 @@ void MotionVisualizer::visualizeAll(const Cloud& cloud,
                                     const Clusters& clusters) {
   current_stamp_ = rclcpp::Time(cloud_info.timestamp, RCL_SYSTEM_TIME);
   time_stamp_set_ = true;
-  visualizeLidarPose(cloud_info);
-  visualizeLidarPoints(cloud);
+  // visualizeLidarPose(cloud_info);
+  // visualizeLidarPoints(cloud);
   visualizePointDetections(cloud, cloud_info);
   visualizeClusterDetections(cloud, cloud_info, clusters);
   visualizeObjectDetections(cloud, cloud_info, clusters);
-  visualizeGroundTruth(cloud, cloud_info);
-  visualizeMesh();
-  visualizeEverFree();
-  const float slice_height =
-      config_.slice_relative_to_sensor
-          ? config_.slice_height + cloud_info.sensor_position.z
-          : config_.slice_height;
-  visualizeEverFreeSlice(slice_height);
-  visualizeTsdfSlice(slice_height);
-  visualizeSlicePoints(cloud, cloud_info);
+  // visualizeGroundTruth(cloud, cloud_info);
+  // visualizeMesh();
+  // visualizeEverFree();
+  // const float slice_height =
+  //     config_.slice_relative_to_sensor
+  //         ? config_.slice_height + cloud_info.sensor_position.z
+  //         : config_.slice_height;
+  // visualizeEverFreeSlice(slice_height);
+  // visualizeTsdfSlice(slice_height);
+  // visualizeSlicePoints(cloud, cloud_info);
   visualizeClusters(clusters);
   visualizeEllipsoids(clusters);
+  visualizeTrajectories(clusters, 0.25, 10);
   time_stamp_set_ = false;
 }
 
@@ -209,6 +211,53 @@ void MotionVisualizer::visualizeEllipsoids(const Clusters& clusters) const {
       ellipsoid_vis_pub_->publish(msg);
     }
   }
+}
+
+void MotionVisualizer::visualizeTrajectories(const Clusters& clusters, double timestep, size_t steps) const {
+  if (trajectory_vis_pub_->get_subscription_count() == 0u) {
+    return;
+  }
+
+  size_t id = 0;
+  visualization_msgs::msg::MarkerArray marker_array;
+
+  for (const Cluster& cluster : clusters) {
+    if (!cluster.est_velocity.isZero() && !cluster.mvce_center.isZero()) {
+      // Create a line strip marker for the trajectory
+      visualization_msgs::msg::Marker line_strip;
+      line_strip.action = visualization_msgs::msg::Marker::ADD;
+      line_strip.type = visualization_msgs::msg::Marker::LINE_STRIP;
+      line_strip.id = id++;
+      line_strip.header.stamp = getStamp();
+      line_strip.header.frame_id = config_.global_frame_name;
+      line_strip.color = setColor(color_map_.colorLookup(cluster.id));
+
+      // Set the scale (width of the line)
+      line_strip.scale.x = 0.05; // Line width in meters
+
+      // Compute the trajectory points
+      Eigen::VectorXd position = cluster.mvce_center;
+      Eigen::VectorXd velocity = cluster.est_velocity;
+
+      for (size_t step = 0; step <= steps; ++step) {
+        geometry_msgs::msg::Point point;
+        point.x = position(0);
+        point.y = position(1);
+        point.z = 0.0; // Keep the trajectory in the XY plane
+
+        line_strip.points.push_back(point);
+
+        // Update position based on velocity and timestep
+        position += velocity * timestep;
+      }
+
+      // Add the marker to the array
+      marker_array.markers.push_back(line_strip);
+    }
+  }
+
+  // Publish the trajectory markers
+  trajectory_vis_pub_->publish(marker_array);
 }
 
 void MotionVisualizer::visualizeEverFree() const {
