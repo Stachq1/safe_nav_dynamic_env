@@ -1,6 +1,8 @@
 #ifndef DYNABLOX_PROCESSING_TRACKING_H_
 #define DYNABLOX_PROCESSING_TRACKING_H_
 
+#include <boost/circular_buffer.hpp>
+
 #include "dynablox/common/types.h"
 #include "dynablox/minimal_ellipsoid/khach.h"
 
@@ -46,7 +48,7 @@ class Tracking {
   const Config config_;
 
   // Tracking data w.r.t. previous observation.
-  std::vector<voxblox::Point> previous_centroids_;
+  std::vector<boost::circular_buffer<voxblox::Point>> previous_centroids_;
   std::vector<int> previous_ids_;
   std::vector<int> previous_track_lengths_;
 

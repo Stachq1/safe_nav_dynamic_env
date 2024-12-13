@@ -79,11 +79,12 @@ void Tracking::trackClusterIDs(const Cloud& cloud, Clusters& clusters) {
 
   std::vector<std::vector<Association>> distances(previous_centroids_.size());
   for (size_t i = 0; i < previous_centroids_.size(); ++i) {
+    const voxblox::Point last_centroid = previous_centroids_[i].back(); // TODO: Should never be nullptr!
     std::vector<Association>& d = distances[i];
     d.reserve(centroids.size());
     for (size_t j = 0; j < centroids.size(); ++j) {
       Association association;
-      association.distance = (previous_centroids_[i] - centroids[j]).norm();
+      association.distance = (last_centroid - centroids[j]).norm();
       association.previous_id = i;
       association.current_id = j;
       d.push_back(association);
@@ -120,6 +121,8 @@ void Tracking::trackClusterIDs(const Cloud& cloud, Clusters& clusters) {
     // Update traked cluster and remove that match to search for next best.
     clusters[curr_id].id = previous_ids_[prev_id];
     clusters[curr_id].track_length = previous_track_lengths_[prev_id] + 1;
+    clusters[curr_id].previous_centroids = previous_centroids_[prev_id];
+    clusters[curr_id].previous_centroids.push_back(centroids[curr_id]);
     reused_ids.insert(previous_ids_[prev_id]);
     distances.erase(distances.begin() + erase_i);
     for (auto& vec : distances) {
@@ -128,24 +131,28 @@ void Tracking::trackClusterIDs(const Cloud& cloud, Clusters& clusters) {
   }
 
   // Fill in all remaining ids and track data.
-  previous_centroids_ = centroids;
   previous_ids_.clear();
-  previous_ids_.reserve(clusters.size());
   previous_track_lengths_.clear();
+  previous_centroids_.clear();
   previous_ids_.reserve(clusters.size());
+  previous_track_lengths_.reserve(clusters.size());
+  previous_centroids_.reserve(clusters.size());
 
   int id_counter = 0;
   for (Cluster& cluster : clusters) {
     if (cluster.id == -1) {
-      // We need to replace it.
+      // Assign a new unique ID.
       while (reused_ids.find(id_counter) != reused_ids.end()) {
         id_counter++;
       }
-      cluster.id = id_counter;
-      id_counter++;
+      cluster.id = id_counter++;
+      cluster.previous_centroids.push_back(centroids[&cluster - &clusters[0]]);
     }
+
+    // Save the updated state for tracking in the next frame.
     previous_ids_.push_back(cluster.id);
     previous_track_lengths_.push_back(cluster.track_length);
+    previous_centroids_.push_back(cluster.previous_centroids);
   }
 }
 
