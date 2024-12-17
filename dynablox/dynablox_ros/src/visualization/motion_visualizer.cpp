@@ -48,7 +48,7 @@ void MotionVisualizer::setupRos() {
   tsdf_slice_pub_ = nh_->create_publisher<sensor_msgs::msg::PointCloud2>("slice/tsdf", qos_profile);
   point_slice_pub_ = nh_->create_publisher<visualization_msgs::msg::Marker>("slice/points", qos_profile);
   cluster_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("clusters", qos_profile);
-  ellipsoid_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::Marker>("ellipsoids", qos_profile);
+  ellipsoid_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("ellipsoids", qos_profile);
   trajectory_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/ellipsoid_trajectories", qos_profile);
 }
 
@@ -164,9 +164,11 @@ void MotionVisualizer::visualizeEllipsoids(const Clusters& clusters) const {
   }
 
   size_t id = 0;
-  for(const Cluster& cluster : clusters) {
+  visualization_msgs::msg::MarkerArray marker_array;
+
+  for (const Cluster& cluster : clusters) {
     if (!cluster.mvce_A.isZero() && !cluster.mvce_center.isZero()) {
-      // Set message shape, color, type and ID
+      // Set message shape, color, type, and ID
       visualization_msgs::msg::Marker msg;
       msg.action = visualization_msgs::msg::Marker::ADD;
       msg.type = visualization_msgs::msg::Marker::SPHERE;
@@ -208,9 +210,13 @@ void MotionVisualizer::visualizeEllipsoids(const Clusters& clusters) const {
       msg.pose.position.y = cluster.mvce_center(1);
       msg.pose.position.z = 0.0;
 
-      ellipsoid_vis_pub_->publish(msg);
+      // Add the marker to the MarkerArray
+      marker_array.markers.push_back(msg);
     }
   }
+
+  // Publish the MarkerArray
+  ellipsoid_vis_pub_->publish(marker_array);
 }
 
 void MotionVisualizer::visualizeTrajectories(const Clusters& clusters, double timestep, size_t steps) const {

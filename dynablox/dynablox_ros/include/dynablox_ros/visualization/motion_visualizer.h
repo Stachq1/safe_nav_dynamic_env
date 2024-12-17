@@ -139,7 +139,7 @@ class MotionVisualizer {
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr point_slice_pub_;
   rclcpp::Publisher<voxblox_msgs::msg::Mesh>::SharedPtr mesh_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr cluster_vis_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr ellipsoid_vis_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ellipsoid_vis_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr trajectory_vis_pub_;
 
   // Variables.
