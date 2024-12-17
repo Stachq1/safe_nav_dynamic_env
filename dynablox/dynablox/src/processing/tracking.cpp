@@ -79,7 +79,7 @@ void Tracking::trackClusterIDs(const Cloud& cloud, Clusters& clusters) {
 
   std::vector<std::vector<Association>> distances(previous_centroids_.size());
   for (size_t i = 0; i < previous_centroids_.size(); ++i) {
-    const voxblox::Point last_centroid = previous_centroids_[i].back(); // TODO: Should never be nullptr!
+    const voxblox::Point last_centroid = previous_centroids_[i].back();
     std::vector<Association>& d = distances[i];
     d.reserve(centroids.size());
     for (size_t j = 0; j < centroids.size(); ++j) {
@@ -167,7 +167,7 @@ voxblox::Point Tracking::predictClusterVelocity(const boost::circular_buffer<vox
 
   // Compute average velocity
   for (size_t i = 1; i < n; ++i) {
-      est_velocity += (previous_poses[i] - previous_poses[i - 1]);
+    est_velocity += (previous_poses[i] - previous_poses[i - 1]) / config_.dt_;
   }
   est_velocity /= (n - 1);
 

@@ -12,7 +12,7 @@ class Tracking {
  public:
   // Config.
   struct Config {
-    Config() : min_track_duration(0), max_tracking_distance(1.f), min_obstacle_size(10) {}
+    Config() : min_track_duration(0), max_tracking_distance(1.f), min_obstacle_size(10), dt_(0.1) {}
 
     // Numbers of frames a cluster needs to be tracked to be considered dynamic.
     int min_track_duration;
@@ -22,6 +22,9 @@ class Tracking {
 
     // Minimal number of cluster points to classify as obstacle.
     int min_obstacle_size;
+
+    // Time step for velocity prediction.
+    double dt_;
   };
 
   explicit Tracking(const Config& config = Config()) : config_(config),
