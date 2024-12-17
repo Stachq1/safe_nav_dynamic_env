@@ -74,7 +74,7 @@ void MotionVisualizer::visualizeAll(const Cloud& cloud,
   // visualizeSlicePoints(cloud, cloud_info);
   visualizeClusters(clusters);
   visualizeEllipsoids(clusters);
-  visualizeTrajectories(clusters, 0.25, 10);
+  visualizeTrajectories(clusters, 0.1, 20);
   time_stamp_set_ = false;
 }
 
