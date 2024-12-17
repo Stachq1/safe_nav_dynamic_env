@@ -237,7 +237,7 @@ void MotionVisualizer::visualizeTrajectories(const Clusters& clusters, double ti
 
       // Compute the trajectory points
       Eigen::VectorXd position = cluster.mvce_center;
-      Eigen::VectorXd velocity = cluster.est_velocity;
+      Eigen::VectorXd velocity = Eigen::Vector2d(cluster.est_velocity.x(), cluster.est_velocity.y());
 
       for (size_t step = 0; step <= steps; ++step) {
         geometry_msgs::msg::Point point;
