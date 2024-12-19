@@ -10,7 +10,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     # Check if we should simulate the robot
-    param_node = rclpy.Node('')
+    param_node = rclpy.node.Node('mppi_controller')
 
     param_node.declare_parameter('sim', True)
     sim = param_node.get_parameter('sim').value

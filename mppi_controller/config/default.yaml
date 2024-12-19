@@ -1,6 +1,6 @@
 mppi_controller:
   ros__parameters:
-    sim: false
+    sim: true
     dt: 0.1
     horizon: 20
     cost_weights:
