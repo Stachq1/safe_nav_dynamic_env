@@ -20,8 +20,8 @@ class MPPIController(Node):
 
         # Initialize the MPPI controller parameters
         self.num_samples = 5000
-        self.horizon = 40
-        self.dt = 0.25
+        self.horizon = 20
+        self.dt = 0.1
 
         # Ensure time synchronization with SPOT and create command client
         self.robot = robot
