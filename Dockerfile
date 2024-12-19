@@ -32,7 +32,7 @@ RUN export LD_LIBRARY_PATH=/opt/ros/humble/opt/rviz_ogre_vendor/lib:$LD_LIBRARY_
     export LD_LIBRARY_PATH=/opt/drake/lib:$LD_LIBRARY_PATH
 
 # Remove apt installed Eigen 3.4.0 and install 3.3.7 instead
-RUN rm -rf /usr/include/eigen3 && mv /root/dynablox/eigen3 /usr/include/
+RUN rm -rf /usr/include/eigen3 && mv /root/safe_nav_dynamic_env/eigen3 /usr/include/
 
 # Source the ROS environment
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
