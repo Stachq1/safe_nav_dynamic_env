@@ -1,5 +1,6 @@
 import rclpy
 from mppi_controller import MPPIController
+from mppi_controller import MPPIControllerSim
 
 import bosdyn.client.util
 from bosdyn.client import create_standard_sdk
@@ -22,15 +23,11 @@ def main(args=None):
         robot = sdk.create_robot('192.168.50.3')
         bosdyn.client.util.authenticate(robot)
         lease_client = robot.ensure_client(LeaseClient.default_service_name)
-
-    # Create both nodes
-    mppi_node = MPPIController()
-
-    # Spin the node with a lease keep alive
-    if not sim:
+        mppi_node = MPPIController(robot)
         with LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True):
             rclpy.spin(mppi_node)
     else:
+        mppi_node = MPPIControllerSim(None)
         rclpy.spin(mppi_node)
 
     # When finished, destroy the nodes
