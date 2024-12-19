@@ -27,7 +27,7 @@ def main(args=None):
         with LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True):
             rclpy.spin(mppi_node)
     else:
-        mppi_node = MPPIControllerSim(None)
+        mppi_node = MPPIControllerSim()
         rclpy.spin(mppi_node)
 
     # When finished, destroy the nodes
