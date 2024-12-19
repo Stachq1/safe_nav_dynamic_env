@@ -20,8 +20,8 @@ class MPPIControllerSim(Node):
         self.horizon = 20
         self.dt = 0.1
 
-        self.curr_state = np.array([0.0, 0.0, 0.0])
-        self.goal = np.array([5.0, 5.0, 0.0])
+        self.curr_state = np.array([-5.0, 5.0, 0.0])
+        self.goal = np.array([5.0, -5.0, 0.0])
         self.obstacles = []
         self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
 
