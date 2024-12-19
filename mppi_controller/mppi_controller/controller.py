@@ -6,7 +6,7 @@ import time
 from geometry_msgs.msg import Pose, Point, Vector3
 from mppi_controller.obstacle import Obstacle
 from nav_msgs.msg import Odometry
-from obstacle_msgs.msg import ObstacleArray, Obstacle
+from ellipsoid_msgs.msg import EllipsoidArray, Ellipsoid
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker
 
@@ -39,7 +39,7 @@ class MPPIController(Node):
         self.get_logger().info('MPPIController node has started')
         self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
         self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
-        self.obstacle_subscriber_ = self.create_subscription(ObstacleArray, '/obstacles', self.obstacle_callback, 10)
+        self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
         self.timer = self.create_timer(self.dt, self.update_state)
 
         # Initialize the current state, goal, obstacles and previous controls
@@ -48,11 +48,11 @@ class MPPIController(Node):
         self.obstacles = []
         self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
 
-    def obstacle_callback(self, msg: ObstacleArray):
+    def obstacle_callback(self, msg: EllipsoidArray):
         self.obstacles = []
-        for obs_msg in msg.obstacles:
-            # Convert each obstacle message into an obstacle object
-            self.obstacle.append(Obstacle(obs_msg))
+        for obs_msg in msg.ellipsoids:
+            # Convert each ellipsoid message into an ellipsoid object
+            self.obstacles.append(Obstacle(obs_msg))
         return
 
     def quaternion_to_euler(self, quaternion):

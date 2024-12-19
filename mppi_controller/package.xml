@@ -10,7 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_python</buildtool_depend>
 
-  <depend>obstacle_msgs</depend>
+  <depend>ellipsoid_msgs</depend>
   <depend>rclpy</depend>
 
   <export>

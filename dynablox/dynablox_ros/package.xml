@@ -19,7 +19,7 @@
   <!-- Dependencies -->
   <depend>dynablox</depend>
   <depend>geometry_msgs</depend>
-  <depend>obstacle_msgs</depend>
+  <depend>ellipsoid_msgs</depend>
   <depend>pcl_conversions</depend>
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>

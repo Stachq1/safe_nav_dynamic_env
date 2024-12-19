@@ -1,8 +1,8 @@
 import numpy as np
-from obstacle_msgs.msg import Obstacle
+from ellipsoid_msgs.msg import Ellipsoid
 
 class Obstacle:
-    def __init__(self, msg: Obstacle, enlargement_radius=0.25):
+    def __init__(self, msg: Ellipsoid, enlargement_radius=0.25):
         """
         Initialize the Obstacle class by enlarging the ellipsoid.
 
@@ -12,7 +12,7 @@ class Obstacle:
         # Extract data from the message
         self.center = np.array([msg.center.x, msg.center.y])  # Extract the 2D center
         self.velocity = np.array([msg.velocity.x, msg.velocity.y])  # Extract the 2D velocity
-        self.init_a_matrix = np.array(msg.a_matrix).reshape(2, 2)  # Convert flattened array to 2x2 matrix
+        self.init_a_matrix = msg.a_matrix.reshape(2, 2)  # Convert flattened array to 2x2 matrix
 
         # Enlarge the ellipsoid
         self.enlarged_a_matrix = self.enlarge_ellipsoid(self.init_a_matrix, enlargement_radius)

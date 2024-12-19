@@ -149,7 +149,7 @@ void MotionDetector::setupRos() {
 
   // Publish the obstacles for the controller to use
   const rclcpp::QoS qos_profile(10);
-  obstacle_pub_ = nh_->create_publisher<obstacle_msgs::msg::ObstacleArray>("/obstacles", qos_profile);
+  obstacle_pub_ = nh_->create_publisher<ellipsoid_msgs::msg::EllipsoidArray>("/obstacles", qos_profile);
 }
 
 void MotionDetector::pointcloudCallback(
@@ -395,7 +395,7 @@ Eigen::Matrix4f MotionDetector::transformStampedToMatrix(const geometry_msgs::ms
 
 void MotionDetector::publishObstacles(const Clusters& clusters) {
   // Create the obstacle array message
-  obstacle_msgs::msg::ObstacleArray obstacle_array;
+  ellipsoid_msgs::msg::EllipsoidArray obstacle_array;
 
   // Initialize the header with the current timestamp
   obstacle_array.header.stamp = nh_->get_clock()->now();
@@ -403,7 +403,7 @@ void MotionDetector::publishObstacles(const Clusters& clusters) {
 
   // Loop through each cluster and populate the Obstacle messages
   for (const Cluster &cluster : clusters) {
-    obstacle_msgs::msg::Obstacle obstacle;
+    ellipsoid_msgs::msg::Ellipsoid obstacle;
 
     // 2D center of the ellipsoid
     geometry_msgs::msg::Vector3 center;
@@ -428,7 +428,7 @@ void MotionDetector::publishObstacles(const Clusters& clusters) {
     obstacle.velocity = velocity;
 
     // Add the obstacle to the obstacle array
-    obstacle_array.obstacles.push_back(obstacle);
+    obstacle_array.ellipsoids.push_back(obstacle);
   }
 
   // Publish the obstacle array

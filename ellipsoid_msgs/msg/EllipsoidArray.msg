@@ -2,4 +2,4 @@
 std_msgs/Header header
 
 # Array of Obstacle messages
-Obstacle[] obstacles
+Ellipsoid[] ellipsoids

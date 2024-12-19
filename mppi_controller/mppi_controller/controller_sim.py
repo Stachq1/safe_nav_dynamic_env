@@ -4,7 +4,7 @@ import numpy as np
 
 from geometry_msgs.msg import Pose, Point, Vector3
 from mppi_controller.obstacle import Obstacle
-from obstacle_msgs.msg import ObstacleArray, Obstacle
+from ellipsoid_msgs.msg import EllipsoidArray, Ellipsoid
 from std_msgs.msg import ColorRGBA, Header
 from visualization_msgs.msg import Marker
 
@@ -13,23 +13,23 @@ class MPPIControllerSim(Node):
         super().__init__('mppi_controller_sim')
         self.get_logger().info('MPPIControllerSim node has started')
         self.marker_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
-        self.obstacle_subscriber_ = self.create_subscription(ObstacleArray, '/obstacles', self.obstacle_callback, 10)
-        self.timer = self.create_timer(0.2, self.update_state)
+        self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
+        self.timer = self.create_timer(0.1, self.update_state)
 
-        self.num_samples = 5000
+        self.num_samples = 10000
         self.horizon = 20
-        self.dt = 0.2
+        self.dt = 0.1
 
         self.curr_state = np.array([0.0, 0.0, 0.0])
         self.goal = np.array([5.0, 5.0, 0.0])
         self.obstacles = []
         self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
 
-    def obstacle_callback(self, msg: ObstacleArray):
+    def obstacle_callback(self, msg: EllipsoidArray):
         self.obstacles = []
-        for obs_msg in msg.obstacles:
-            # Convert each obstacle message into an obstacle object
-            self.obstacle.append(Obstacle(obs_msg))
+        for obs_msg in msg.ellipsoids:
+            # Convert each ellipsoid message into an ellipsoid object
+            self.obstacles.append(Obstacle(obs_msg))
         return
 
     def dynamics(self, state, control):

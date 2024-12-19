@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>obstacle_msgs</name>
+  <name>ellipsoid_msgs</name>
   <version>0.0.1</version>
   <description>ROS 2 package for ellipsoid obstacle messages</description>
   <author email="spiasecki@student.ethz.ch">Stanislaw Piasecki</author>

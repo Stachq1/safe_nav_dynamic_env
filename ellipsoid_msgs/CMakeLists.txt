@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(obstacle_msgs)
+project(ellipsoid_msgs)
 
 # Find dependencies
 find_package(ament_cmake REQUIRED)
@@ -9,8 +9,8 @@ find_package(rosidl_default_generators REQUIRED)
 
 # Generate the messages
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Obstacle.msg"
-  "msg/ObstacleArray.msg"
+  "msg/Ellipsoid.msg"
+  "msg/EllipsoidArray.msg"
   DEPENDENCIES geometry_msgs std_msgs
 )
 

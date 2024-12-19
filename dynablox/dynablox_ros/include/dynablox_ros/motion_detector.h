@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include <obstacle_msgs/msg/obstacle.hpp>
-#include <obstacle_msgs/msg/obstacle_array.hpp>
+#include <ellipsoid_msgs/msg/ellipsoid.hpp>
+#include <ellipsoid_msgs/msg/ellipsoid_array.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/buffer.h>
@@ -134,7 +134,7 @@ class MotionDetector {
 
   // ROS.
   rclcpp::Node::SharedPtr nh_;
-  rclcpp::Publisher<obstacle_msgs::msg::ObstacleArray>::SharedPtr obstacle_pub_;
+  rclcpp::Publisher<ellipsoid_msgs::msg::EllipsoidArray>::SharedPtr obstacle_pub_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr lidar_pcl_sub_;
 
   tf2_ros::Buffer tf_buffer_;
