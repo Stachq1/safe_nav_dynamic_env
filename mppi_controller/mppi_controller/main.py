@@ -11,8 +11,8 @@ def main(args=None):
     # Check if we should simulate the robot
     param_node = rclpy.Node('')
 
-    param_node.declare_parameter('parameter_name_1')
-    sim = param_node.get_parameter('parameter_name_1').value
+    param_node.declare_parameter('sim', True)
+    sim = param_node.get_parameter('sim').value
     param_node.get_logger().info(f"Sim: {sim}")
 
     param_node.destroy_node()
