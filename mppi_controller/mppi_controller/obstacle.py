@@ -43,7 +43,7 @@ class Obstacle:
         :param dt: The time step size.
         :return: A list of 2D positions representing the trajectory.
         """
-        time_steps = np.arange(horizon) * dt
+        time_steps = np.arange(horizon + 1) * dt
         trajectory = self.center + np.outer(time_steps, self.velocity)
         return trajectory
 
