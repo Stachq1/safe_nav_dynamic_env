@@ -1,0 +1,10 @@
+mppi_controller:
+  ros__parameters:
+    sim: false
+    dt: 0.1
+    horizon: 20
+    cost_weights:
+      control_cost_weight: 1.0
+      goal_cost_weight: 3.0
+      terminal_goal_cost_weight: 6.0
+      obstacle_cost_weight: 1.5
