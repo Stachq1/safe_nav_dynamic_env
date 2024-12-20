@@ -19,7 +19,7 @@ class MPPIController(Node):
         super().__init__('mppi_controller')
 
         # Initialize the MPPI controller parameters
-        self.num_samples = 5000
+        self.num_samples = 10000
         self.horizon = 20
         self.dt = 0.1
 
@@ -98,7 +98,7 @@ class MPPIController(Node):
             trajectories[:, t + 1, :] = self.dynamics(trajectories[:, t, :], controls[:, t, :])
         return trajectories, controls
 
-    def cost_function(self, trajectories, controls, obstacles, control_cost_weight=1.0, goal_cost_weight=3.0, terminal_goal_cost_weight=6.0, obstacle_cost_weight=1.5):
+    def cost_function(self, trajectories, controls, obstacles, control_cost_weight=0.25, goal_cost_weight=1.0, terminal_goal_cost_weight=2.0, obstacle_cost_weight=10):
         # Goal Cost: Euclidean distance from all trajectory steps (except last one) to the goal
         goal_costs = goal_cost_weight * np.sum(np.linalg.norm(trajectories[:, :-1, :2] - self.goal[:2], axis=2), axis=1)
 

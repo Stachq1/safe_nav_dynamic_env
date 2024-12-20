@@ -48,6 +48,37 @@ class Obstacle:
         return trajectory
 
     def compute_dynamic_obstacle_cost(self, trajectories, horizon, dt, cutoff_distance=0.4):
-        distances = np.linalg.norm(trajectories[:, :, :2] - self.get_trajectory(horizon, dt), axis=2)
+        """
+        Compute the cost of the robot's trajectories based on the distance to the ellipsoid boundary.
+        :param trajectories: A 3D numpy array of robot trajectories (batch, time, 2D position).
+        :param horizon: The number of steps in the horizon.
+        :param dt: The time step size.
+        :param cutoff_distance: The minimum distance for cost computation.
+        :return: A 1D numpy array of costs for each trajectory.
+        """
+        # Get obstacle trajectory: (time, 2)
+        obstacle_trajectory = self.get_trajectory(horizon, dt)
+
+        # Relative positions: (batch, time, 2)
+        relative_positions = trajectories[:, :, :2] - obstacle_trajectory[np.newaxis, :, :]
+
+        # Transform positions to ellipsoid frame: (batch, time, 2)
+        transformed_positions = relative_positions @ self.enlarged_a_matrix.T
+
+        # Compute quadratic form p.T @ A @ p for each relative position: (batch, time)
+        norm_squared = np.sum(relative_positions * transformed_positions, axis=2)
+
+        # Compute distances to ellipsoid boundary
+        # Outside ellipsoid: distance to surface
+        # Inside ellipsoid: distance is zero
+        scale_factors = np.sqrt(norm_squared)
+        scale_factors[norm_squared <= 1] = 1  # No scaling for points inside the ellipsoid
+        surface_positions = relative_positions / scale_factors[:, :, np.newaxis]  # Nearest points on ellipsoid surface
+        distances = np.linalg.norm(relative_positions - surface_positions, axis=2)
+        distances[norm_squared <= 1] = 0  # Zero distance for points inside the ellipsoid
+
+        # Apply cutoff distance and compute costs
         masked_distances = np.where(distances >= cutoff_distance, np.inf, distances)
-        return np.sum(np.exp(-masked_distances), axis=1)
+        costs = np.sum(np.exp(-masked_distances), axis=1)
+
+        return costs
