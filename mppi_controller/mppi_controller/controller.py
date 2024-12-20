@@ -43,8 +43,8 @@ class MPPIController(Node):
         self.timer = self.create_timer(self.dt, self.update_state)
 
         # Initialize the current state, goal, obstacles and previous controls
-        self.curr_state = np.array([0.0, 0.0, 0.0])
-        self.goal = np.array([5.0, 5.0, 0.0])     # TODO: How to handle goal setting?
+        self.curr_state = None
+        self.goal = None
         self.obstacles = []
         self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
 
@@ -68,6 +68,8 @@ class MPPIController(Node):
         # Convert the quaternion to yaw angle
         yaw = self.quaternion_to_euler(orientation)
         self.curr_state = np.array([x, y, yaw])
+        if not self.goal:
+            self.goal = np.array([x + 3.0, y, 0.0])
         return
 
     def dynamics(self, state, control):
@@ -181,6 +183,10 @@ class MPPIController(Node):
         self.marker_publisher_.publish(marker)
 
     def update_state(self):
+        # Wait for the current state and goal to be initialized
+        if self.curr_state is None or self.goal is None:
+            return
+
         # Get the state of the SPOT (create a deep copy)
         state = np.copy(self.curr_state)
 
