@@ -17,11 +17,26 @@ from bosdyn.client.time_sync import TimeSyncClient, TimeSyncThread
 class MPPIController(Node):
     def __init__(self, robot):
         super().__init__('mppi_controller')
+        self.get_logger().info('MPPIController node has started')
 
-        # Initialize the MPPI controller parameters
-        self.num_samples = 10000
-        self.horizon = 20
-        self.dt = 0.1
+        # Parameter handling
+        self.declare_parameter('dt', 0.1)
+        self.declare_parameter('horizon', 20)
+        self.declare_parameter('num_samples', 10000)
+        self.declare_parameter('cost_weights.control_cost_weight', 1.0)
+        self.declare_parameter('cost_weights.goal_cost_weight', 2.0)
+        self.declare_parameter('cost_weights.terminal_goal_cost_weight', 3.0)
+        self.declare_parameter('cost_weights.obstacle_cost_weight', 9.0)
+
+        self.dt = self.get_parameter('dt').value
+        self.horizon = self.get_parameter('horizon').value
+        self.num_samples = self.get_parameter('num_samples').value
+        self.cost_weights = {
+            'control': self.get_parameter('cost_weights.control_cost_weight').value,
+            'goal': self.get_parameter('cost_weights.goal_cost_weight').value,
+            'terminal_goal': self.get_parameter('cost_weights.terminal_goal_cost_weight').value,
+            'obstacle': self.get_parameter('cost_weights.obstacle_cost_weight').value,
+        }
 
         # Ensure time synchronization with SPOT and create command client
         self.robot = robot
@@ -36,7 +51,6 @@ class MPPIController(Node):
         blocking_stand(self.robot_command_client, timeout_sec=10)
 
         # Initialize ROS publishers and subscribers
-        self.get_logger().info('MPPIController node has started')
         self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
         self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
@@ -100,21 +114,21 @@ class MPPIController(Node):
             trajectories[:, t + 1, :] = self.dynamics(trajectories[:, t, :], controls[:, t, :])
         return trajectories, controls
 
-    def cost_function(self, trajectories, controls, obstacles, control_cost_weight=0.25, goal_cost_weight=1.0, terminal_goal_cost_weight=2.0, obstacle_cost_weight=10):
+    def cost_function(self, trajectories, controls, obstacles):
         # Goal Cost: Euclidean distance from all trajectory steps (except last one) to the goal
-        goal_costs = goal_cost_weight * np.sum(np.linalg.norm(trajectories[:, :-1, :2] - self.goal[:2], axis=2), axis=1)
+        goal_costs = self.cost_weights['goal'] * np.sum(np.linalg.norm(trajectories[:, :-1, :2] - self.goal[:2], axis=2), axis=1)
 
         # Terminal Goal Cost: Euclidean distance from the last state in trajectory to the goal
-        terminal_goal_costs = terminal_goal_cost_weight * np.linalg.norm(trajectories[:, -1, :2] - self.goal[:2], axis=1)
+        terminal_goal_costs = self.cost_weights['terminal_goal'] * np.linalg.norm(trajectories[:, -1, :2] - self.goal[:2], axis=1)
 
         # Obstacle Cost: Repulsive cost for each trajectory based on proximity to each obstacle
         obstacle_costs = np.zeros(trajectories.shape[0])  # Shape (num_samples,)
         for obs in obstacles:
             obstacle_costs += obs.compute_dynamic_obstacle_cost(trajectories, self.horizon, self.dt)
-        obstacle_costs *= obstacle_cost_weight
+        obstacle_costs *= self.cost_weights['obstacle']
 
         # Control Cost: L2 norm of the control commands
-        control_costs = control_cost_weight * np.sum(np.square(controls), axis=(1, 2))  # Shape (num_samples,)
+        control_costs = self.cost_weights['control'] * np.sum(np.square(controls), axis=(1, 2))  # Shape (num_samples,)
 
         return goal_costs + terminal_goal_costs + obstacle_costs + control_costs
 

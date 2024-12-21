@@ -14,11 +14,28 @@ class MPPIControllerSim(Node):
         self.get_logger().info('MPPIControllerSim node has started')
         self.marker_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
-        self.timer = self.create_timer(0.1, self.update_state)
 
-        self.num_samples = 10000
-        self.horizon = 20
-        self.dt = 0.1
+        # Parameter handling
+        self.declare_parameter('dt', 0.1)
+        self.declare_parameter('horizon', 20)
+        self.declare_parameter('num_samples', 10000)
+        self.declare_parameter('cost_weights.control_cost_weight', 1.0)
+        self.declare_parameter('cost_weights.goal_cost_weight', 2.0)
+        self.declare_parameter('cost_weights.terminal_goal_cost_weight', 3.0)
+        self.declare_parameter('cost_weights.obstacle_cost_weight', 9.0)
+
+        self.dt = self.get_parameter('dt').value
+        self.horizon = self.get_parameter('horizon').value
+        self.num_samples = self.get_parameter('num_samples').value
+        self.cost_weights = {
+            'control': self.get_parameter('cost_weights.control_cost_weight').value,
+            'goal': self.get_parameter('cost_weights.goal_cost_weight').value,
+            'terminal_goal': self.get_parameter('cost_weights.terminal_goal_cost_weight').value,
+            'obstacle': self.get_parameter('cost_weights.obstacle_cost_weight').value,
+        }
+
+        # Initialize the timer for updating the state
+        self.timer = self.create_timer(self.dt, self.update_state)
 
         self.curr_state = np.array([-5.0, 5.0, 0.0])
         self.goal = np.array([5.0, -5.0, 0.0])
@@ -60,21 +77,21 @@ class MPPIControllerSim(Node):
             trajectories[:, t + 1, :] = self.dynamics(trajectories[:, t, :], controls[:, t, :])
         return trajectories, controls
 
-    def cost_function(self, trajectories, controls, control_cost_weight=1.0, goal_cost_weight=3.0, terminal_goal_cost_weight=6.0, obstacle_cost_weight=6.0):
+    def cost_function(self, trajectories, controls):
         # Goal Cost: Euclidean distance from all trajectory steps (except last one) to the goal
-        goal_costs = goal_cost_weight * np.sum(np.linalg.norm(trajectories[:, :-1, :2] - self.goal[:2], axis=2), axis=1)
+        goal_costs = self.cost_weights['goal'] * np.sum(np.linalg.norm(trajectories[:, :-1, :2] - self.goal[:2], axis=2), axis=1)
 
         # Terminal Goal Cost: Euclidean distance from the last state in trajectory to the goal
-        terminal_goal_costs = terminal_goal_cost_weight * np.linalg.norm(trajectories[:, -1, :2] - self.goal[:2], axis=1)
+        terminal_goal_costs = self.cost_weights['terminal_goal'] * np.linalg.norm(trajectories[:, -1, :2] - self.goal[:2], axis=1)
 
         # Obstacle Cost: Repulsive cost for each trajectory based on proximity to each obstacle
         obstacle_costs = np.zeros(trajectories.shape[0])  # Shape (num_samples,)
         for obs in self.obstacles:
             obstacle_costs += obs.compute_dynamic_obstacle_cost(trajectories, self.horizon, self.dt)
-        obstacle_costs *= obstacle_cost_weight
+        obstacle_costs *= self.cost_weights['obstacle']
 
         # Control Cost: L2 norm of the control commands
-        control_costs = control_cost_weight * np.sum(np.square(controls), axis=(1, 2))  # Shape (num_samples,)
+        control_costs = self.cost_weights['control'] * np.sum(np.square(controls), axis=(1, 2))  # Shape (num_samples,)
 
         return goal_costs + terminal_goal_costs + obstacle_costs + control_costs
 
