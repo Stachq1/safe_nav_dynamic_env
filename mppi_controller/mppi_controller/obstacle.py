@@ -47,7 +47,7 @@ class Obstacle:
         trajectory = self.center + np.outer(time_steps, self.velocity)
         return trajectory
 
-    def compute_dynamic_obstacle_cost(self, trajectories, horizon, dt, cutoff_distance=0.4):
+    def compute_dynamic_obstacle_cost(self, trajectories, horizon, dt, cutoff_distance=5.0):
         """
         Compute the cost of the robot's trajectories based on the distance to the ellipsoid boundary.
         :param trajectories: A 3D numpy array of robot trajectories (batch, time, 2D position).
