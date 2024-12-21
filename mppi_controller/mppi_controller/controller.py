@@ -200,6 +200,10 @@ class MPPIController(Node):
         # Update the previous control for the next iteration
         self.prev_controls = best_controls
 
+        # Clamp the computed controls to the SPOT's velocity limits
+        best_controls[0, 0] = np.clip(best_controls[0, 0], -1.0, 1.0)
+        best_controls[0, 1] = np.clip(best_controls[0, 1], -0.5, 0.5)
+
         # Send control command to the SPOT
         command = RobotCommandBuilder.synchro_velocity_command(v_x=best_controls[0, 0], v_y=0.0, v_rot=best_controls[0, 1])
         end_time_secs = time.time() + self.dt
