@@ -150,6 +150,10 @@ class MPPIControllerSim(Node):
         # Update the previous control for the next iteration
         self.prev_controls = best_controls
 
+        # Clip the controls to be within the limits of SPOT
+        best_controls[0, 0] = np.clip(best_controls[0, 0], -1.0, 1.0)
+        best_controls[0, 1] = np.clip(best_controls[0, 1], -0.5, 0.5)
+
         # Compute the next state (tweak dimensions to work with vectorized function)
         self.curr_state = self.dynamics(self.curr_state.reshape(1, -1), best_controls[0, :].reshape(1, -1))
         self.curr_state = self.curr_state.flatten()
