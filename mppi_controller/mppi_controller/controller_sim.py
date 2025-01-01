@@ -77,7 +77,7 @@ class MPPIControllerSim(Node):
             trajectories[:, t + 1, :] = self.dynamics(trajectories[:, t, :], controls[:, t, :])
         return trajectories, controls
 
-    def cost_function(self, trajectories, controls):
+    def cost_function(self, trajectories, controls, obstacles):
         # Goal Cost: Euclidean distance from all trajectory steps (except last one) to the goal
         goal_costs = self.cost_weights['goal'] * np.sum(np.linalg.norm(trajectories[:, :-1, :2] - self.goal[:2], axis=2), axis=1)
 
@@ -86,7 +86,7 @@ class MPPIControllerSim(Node):
 
         # Obstacle Cost: Repulsive cost for each trajectory based on proximity to each obstacle
         obstacle_costs = np.zeros(trajectories.shape[0])  # Shape (num_samples,)
-        for obs in self.obstacles:
+        for obs in obstacles:
             obstacle_costs += obs.compute_dynamic_obstacle_cost(trajectories, self.horizon, self.dt)
         obstacle_costs *= self.cost_weights['obstacle']
 
@@ -95,8 +95,8 @@ class MPPIControllerSim(Node):
 
         return goal_costs + terminal_goal_costs + obstacle_costs + control_costs
 
-    def select_best_trajectory(self, trajectories, controls):
-        costs = self.cost_function(trajectories, controls)
+    def select_best_trajectory(self, trajectories, controls, obstacles):
+        costs = self.cost_function(trajectories, controls, obstacles)
         best_index = np.argmin(costs)
         return trajectories[best_index, :, :], controls[best_index, :, :]
 
@@ -160,9 +160,12 @@ class MPPIControllerSim(Node):
         self.marker_publisher_.publish(marker)
 
     def update_state(self):
+        # Get current obstacles (create a deep copy)
+        obstacles = np.copy(self.obstacles)
+
         # Sample trajectories
         trajectories, controls = self.sample_trajectories()
-        best_trajectory, best_controls = self.select_best_trajectory(trajectories, controls)
+        best_trajectory, best_controls = self.select_best_trajectory(trajectories, controls, obstacles)
 
         # Update the previous control for the next iteration
         self.prev_controls = best_controls
