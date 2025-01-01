@@ -41,6 +41,7 @@ class MPPIControllerSim(Node):
         self.goal = np.array([5.0, -5.0, 0.0])
         self.obstacles = []
         self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
+        self.num_collisions = 0
 
     def obstacle_callback(self, msg: EllipsoidArray):
         self.obstacles = []
@@ -163,6 +164,12 @@ class MPPIControllerSim(Node):
         # Get current obstacles (create a deep copy)
         obstacles = np.copy(self.obstacles)
 
+        # Check if there are currently any collisions
+        for obs in obstacles:
+            if obs.check_collision(self.curr_state[:2]):
+                self.num_collisions += 1
+                self.get_logger().warn(f"Collision detected!")
+
         # Sample trajectories
         trajectories, controls = self.sample_trajectories()
         best_trajectory, best_controls = self.select_best_trajectory(trajectories, controls, obstacles)
@@ -187,4 +194,5 @@ class MPPIControllerSim(Node):
         self.visualize_trajectory(best_trajectory)
 
         if self.at_goal() and rclpy.ok():  # Use rclpy.ok() to check if ROS 2 is still running
+            self.get_logger().warn(f"Total collisions: {self.num_collisions}")
             rclpy.shutdown()  # Use rclpy.shutdown() to shutdown the ROS 2 node
