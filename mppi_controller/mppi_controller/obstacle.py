@@ -82,3 +82,22 @@ class Obstacle:
         costs = np.sum(np.exp(-masked_distances), axis=1)
 
         return costs
+
+    def check_collision(self, position):
+        """
+        Check if a given position is inside the enlarged ellipsoid.
+
+        :param position: The 2D position to check.
+        :return: True if the position is inside the ellipsoid, False otherwise.
+        """
+        # Compute the relative position
+        relative_position = position - self.center
+
+        # Transform the position to the ellipsoid frame
+        transformed_position = relative_position @ self.enlarged_a_matrix.T
+
+        # Compute the quadratic form p.T @ A @ p
+        norm_squared = np.sum(relative_position * transformed_position)
+
+        # Check if the position is inside the ellipsoid
+        return norm_squared <= 1
