@@ -220,7 +220,7 @@ class MPPIController(Node):
 
         # Send control command to the SPOT
         command = RobotCommandBuilder.synchro_velocity_command(v_x=best_controls[0, 0], v_y=0.0, v_rot=best_controls[0, 1])
-        end_time_secs = time.time() + self.dt
+        end_time_secs = time.time() + self.dt + 0.1 # Ensure the command is executed for the duration of dt + 0.1s as buffer
         self.robot_command_client.robot_command(command=command, end_time_secs=end_time_secs)
 
         # Visualize the state
