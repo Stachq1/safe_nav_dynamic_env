@@ -83,7 +83,7 @@ class MPPIController(Node):
         yaw = self.quaternion_to_euler(orientation)
         self.curr_state = np.array([x, y, yaw])
         if self.goal.size == 0:
-            self.goal = np.array([x + 2.0, y, 0.0])
+            self.goal = np.array([x, y, 0.0])
         return
 
     def dynamics(self, state, control):
