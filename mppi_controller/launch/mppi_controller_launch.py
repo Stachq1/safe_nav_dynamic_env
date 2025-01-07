@@ -16,7 +16,8 @@ def generate_launch_description():
         '/mppi_visualization',
         '/Odometry',
         '/obstacles',
-        '/best_controls'
+        '/best_controls',
+        '/ellipsoids'
     ]
 
     return LaunchDescription([
