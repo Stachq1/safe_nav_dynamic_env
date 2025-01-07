@@ -47,7 +47,7 @@ class MPPIController(Node):
         self.time_sync_thread.wait_for_sync()
 
         # Power on robot and stand up
-        robot.power_on(timeout_sec=20)
+        self.robot.power_on(timeout_sec=20)
         blocking_stand(self.robot_command_client, timeout_sec=10)
 
         # Initialize ROS publishers and subscribers

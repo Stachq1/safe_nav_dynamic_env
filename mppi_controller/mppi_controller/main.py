@@ -23,8 +23,8 @@ def main(args=None):
         robot = sdk.create_robot('192.168.50.3')
         robot.authenticate("user", "welovethelivox")
         lease_client = robot.ensure_client(LeaseClient.default_service_name)
-        mppi_node = MPPIController(robot)
         with LeaseKeepAlive(lease_client, must_acquire=True, return_at_exit=True):
+            mppi_node = MPPIController(robot)
             rclpy.spin(mppi_node)
     else:
         mppi_node = MPPIControllerSim()
