@@ -3,7 +3,7 @@ from rclpy.node import Node
 import numpy as np
 import time
 
-from geometry_msgs.msg import Pose, Point, Vector3
+from geometry_msgs.msg import Pose, Point, Vector3, Twist
 from mppi_controller.obstacle import Obstacle
 from nav_msgs.msg import Odometry
 from ellipsoid_msgs.msg import EllipsoidArray, Ellipsoid
@@ -52,6 +52,7 @@ class MPPIController(Node):
 
         # Initialize ROS publishers and subscribers
         self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
+        self.control_publisher = self.create_publisher(Twist, '/best_controls', 10)
         self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
         self.timer = self.create_timer(self.dt, self.update_state)
@@ -218,6 +219,12 @@ class MPPIController(Node):
         best_controls[0, 0] = np.clip(best_controls[0, 0], -1.0, 1.0)
         best_controls[0, 1] = np.clip(best_controls[0, 1], -0.5, 0.5)
 
+        # Record the controls in ROSbag
+        msg = Twist()
+        msg.linear.x = best_controls[0, 0]
+        msg.angular.z = best_controls[0, 1]
+        self.control_publisher.publish(msg)
+
         # Send control command to the SPOT
         command = RobotCommandBuilder.synchro_velocity_command(v_x=best_controls[0, 0], v_y=0.0, v_rot=best_controls[0, 1])
         end_time_secs = time.time() + self.dt + 0.1 # Ensure the command is executed for the duration of dt + 0.1s as buffer
@@ -227,7 +234,7 @@ class MPPIController(Node):
         self.visualize_robot_and_goal(state)
         self.visualize_trajectory(best_trajectory)
 
-        if self.at_goal() and rclpy.ok():
+        # if self.at_goal() and rclpy.ok():
             # If at goal, sit down and shutdown the node
-            self.robot_command_client.robot_command(RobotCommandBuilder.synchro_sit_command())
-            rclpy.shutdown()
+            # self.robot_command_client.robot_command(RobotCommandBuilder.synchro_sit_command())
+            # rclpy.shutdown()
