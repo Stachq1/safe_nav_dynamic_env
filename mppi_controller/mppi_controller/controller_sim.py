@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import numpy as np
+import time
 
 from geometry_msgs.msg import Pose, Point, Vector3
 from mppi_controller.obstacle import Obstacle
@@ -23,6 +24,7 @@ class MPPIControllerSim(Node):
         self.declare_parameter('cost_weights.goal_cost_weight', 2.0)
         self.declare_parameter('cost_weights.terminal_goal_cost_weight', 3.0)
         self.declare_parameter('cost_weights.obstacle_cost_weight', 9.0)
+        self.declare_parameter('num_iterations', 5)  # New parameter for the number of iterations
 
         self.dt = self.get_parameter('dt').value
         self.horizon = self.get_parameter('horizon').value
@@ -33,15 +35,21 @@ class MPPIControllerSim(Node):
             'terminal_goal': self.get_parameter('cost_weights.terminal_goal_cost_weight').value,
             'obstacle': self.get_parameter('cost_weights.obstacle_cost_weight').value,
         }
+        self.num_iterations = self.get_parameter('num_iterations').value
 
-        # Initialize the timer for updating the state
-        self.timer = self.create_timer(self.dt, self.update_state)
-
-        self.curr_state = np.array([-5.0, 5.0, 0.0])
+        # Initialize state variables
+        self.initial_state = np.array([-5.0, 5.0, 0.0])
         self.goal = np.array([5.0, -5.0, 0.0])
+        self.curr_state = self.initial_state.copy()
         self.obstacles = []
         self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
         self.num_collisions = 0
+        self.total_collisions = 0
+        self.current_iteration = 0
+
+        # Initialize the timer for updating the state
+        self.timer = self.create_timer(self.dt, self.update_state)
+        self.start_time = time.time()
 
     def obstacle_callback(self, msg: EllipsoidArray):
         self.obstacles = []
@@ -168,6 +176,7 @@ class MPPIControllerSim(Node):
         for obs in obstacles:
             if obs.check_collision(self.curr_state[:2]):
                 self.num_collisions += 1
+                self.total_collisions += 1  # Increment total collisions
                 self.get_logger().warn(f"Collision detected!")
 
         # Sample trajectories
@@ -193,6 +202,18 @@ class MPPIControllerSim(Node):
         self.visualize_robot_and_goal()
         self.visualize_trajectory(best_trajectory)
 
-        if self.at_goal() and rclpy.ok():  # Use rclpy.ok() to check if ROS 2 is still running
-            self.get_logger().warn(f"Total collisions: {self.num_collisions}")
-            rclpy.shutdown()  # Use rclpy.shutdown() to shutdown the ROS 2 node
+        if self.at_goal() and rclpy.ok():
+            self.current_iteration += 1
+            self.get_logger().info(f"Reached goal in iteration {self.current_iteration}. Collisions: {self.num_collisions}")
+            self.num_collisions = 0
+
+            if self.current_iteration >= self.num_iterations:
+                elapsed_time = time.time() - self.start_time  # Calculate elapsed time
+                self.get_logger().warn(f"Simulation completed! Total collisions over all iterations: {self.total_collisions}")
+                self.get_logger().warn(f"Total time elapsed: {elapsed_time:.2f} seconds")
+                rclpy.shutdown()  # Stop the ROS 2 node
+            else:
+                # Reset the robot to the initial state
+                self.curr_state = self.initial_state.copy()
+                self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
+                self.get_logger().info(f"Starting iteration {self.current_iteration + 1}")
