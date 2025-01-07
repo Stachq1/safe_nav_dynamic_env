@@ -6,7 +6,7 @@ mppi_controller:
     num_samples: 5000
     num_iterations: 100
     cost_weights:
-      control_cost_weight: 1.0
+      control_cost_weight: 1.5
       goal_cost_weight: 3.0
       terminal_goal_cost_weight: 6.0
       obstacle_cost_weight: 9.0
