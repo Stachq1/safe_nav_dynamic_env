@@ -17,7 +17,9 @@ def generate_launch_description():
         '/Odometry',
         '/obstacles',
         '/best_controls',
-        '/ellipsoids'
+        '/ellipsoids',
+        '/detections/cluster/dynamic',
+        '/clusters'
     ]
 
     return LaunchDescription([
