@@ -3,10 +3,10 @@ mppi_controller:
     sim: false
     dt: 0.2
     horizon: 10
-    num_samples: 2000
+    num_samples: 5000
     num_iterations: 100
     cost_weights:
-      control_cost_weight: 1.5
+      control_cost_weight: 2.0
       goal_cost_weight: 3.0
       terminal_goal_cost_weight: 3.0
       obstacle_cost_weight: 9.0

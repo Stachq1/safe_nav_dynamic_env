@@ -84,7 +84,7 @@ class MPPIController(Node):
         yaw = self.quaternion_to_euler(orientation)
         self.curr_state = np.array([x, y, yaw])
         if self.goal.size == 0:
-            self.goal = np.array([x, y, 0.0])
+            self.goal = np.array([x, y, yaw])
         return
 
     def dynamics(self, state, control):
@@ -145,7 +145,7 @@ class MPPIController(Node):
         # Create and initialize the Marker for the robot (a small sphere)
         header = Header()
         header.stamp = self.get_clock().now().to_msg()
-        header.frame_id = "body_lidar"
+        header.frame_id = "camera_init"
 
         # Visualize the robot as a red sphere
         robot_marker = Marker(
@@ -179,7 +179,7 @@ class MPPIController(Node):
         # Create and initialize the Marker for the trajectory (line strip)
         header = Header()
         header.stamp = self.get_clock().now().to_msg()
-        header.frame_id = "body_lidar"
+        header.frame_id = "camera_init"
 
         marker = Marker(
             header=header,
