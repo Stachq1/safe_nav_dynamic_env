@@ -76,9 +76,9 @@ class MPPIController(Node):
         return yaw
 
     def odometry_callback(self, msg: Odometry):
-        # Extract the position and orientation from the Odometry message
-        x = msg.pose.pose.position.x
-        y = msg.pose.pose.position.y
+        # Extract the position and orientation from the Odometry message (according to model frame)
+        y = -msg.pose.pose.position.x
+        x = msg.pose.pose.position.y
         orientation = msg.pose.pose.orientation
         # Convert the quaternion to yaw angle
         yaw = self.quaternion_to_euler(orientation)
