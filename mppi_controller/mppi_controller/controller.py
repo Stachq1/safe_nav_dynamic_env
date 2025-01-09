@@ -51,7 +51,9 @@ class MPPIController(Node):
         blocking_stand(self.robot_command_client, timeout_sec=10)
 
         # Initialize ROS publishers and subscribers
-        self.marker_publisher_ = self.create_publisher(Marker, '/mppi_visualization', 10)
+        self.robot_state_vis_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
+        self.robot_goal_vis_publisher_ = self.create_publisher(Marker, '/robot_goal', 10)
+        self.robot_traj_vis_publisher_ = self.create_publisher(Marker, '/robot_trajectory', 10)
         self.control_publisher = self.create_publisher(Twist, '/best_controls', 10)
         self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
@@ -77,8 +79,8 @@ class MPPIController(Node):
 
     def odometry_callback(self, msg: Odometry):
         # Extract the position and orientation from the Odometry message (according to model frame)
-        y = -msg.pose.pose.position.x
-        x = msg.pose.pose.position.y
+        x = msg.pose.pose.position.x
+        y = msg.pose.pose.position.y
         orientation = msg.pose.pose.orientation
         # Convert the quaternion to yaw angle
         yaw = self.quaternion_to_euler(orientation)
@@ -172,8 +174,8 @@ class MPPIController(Node):
         )
 
         # Publish both the robot and goal markers
-        self.marker_publisher_.publish(robot_marker)
-        self.marker_publisher_.publish(goal_marker)
+        self.robot_state_vis_publisher_.publish(robot_marker)
+        self.robot_goal_vis_publisher_.publish(goal_marker)
 
     def visualize_trajectory(self, trajectory):
         # Create and initialize the Marker for the trajectory (line strip)
@@ -195,7 +197,7 @@ class MPPIController(Node):
         marker.points = [Point(x=-state[1], y=state[0], z=0.0) for state in trajectory]
 
         # Publish the trajectory marker
-        self.marker_publisher_.publish(marker)
+        self.robot_traj_vis_publisher_.publish(marker)
 
     def update_state(self):
         # Wait for the current state and goal to be initialized

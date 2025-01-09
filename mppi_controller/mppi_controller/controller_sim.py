@@ -13,7 +13,9 @@ class MPPIControllerSim(Node):
     def __init__(self):
         super().__init__('mppi_controller_sim')
         self.get_logger().info('MPPIControllerSim node has started')
-        self.marker_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
+        self.robot_state_vis_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
+        self.robot_goal_vis_publisher_ = self.create_publisher(Marker, '/robot_goal', 10)
+        self.robot_traj_vis_publisher_ = self.create_publisher(Marker, '/robot_trajectory', 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
 
         # Parameter handling
@@ -143,8 +145,8 @@ class MPPIControllerSim(Node):
         )
 
         # Publish both the robot and goal markers
-        self.marker_publisher_.publish(robot_marker)
-        self.marker_publisher_.publish(goal_marker)
+        self.robot_state_vis_publisher_.publish(robot_marker)
+        self.robot_goal_vis_publisher_.publish(goal_marker)
 
     def visualize_trajectory(self, trajectory):
         # Create and initialize the Marker for the trajectory (line strip)
@@ -166,7 +168,7 @@ class MPPIControllerSim(Node):
         marker.points = [Point(x=state[0], y=state[1], z=0.0) for state in trajectory]
 
         # Publish the trajectory marker
-        self.marker_publisher_.publish(marker)
+        self.robot_traj_vis_publisher_.publish(marker)
 
     def update_state(self):
         # Get current obstacles (create a deep copy)
