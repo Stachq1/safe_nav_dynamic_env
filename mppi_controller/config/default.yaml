@@ -1,12 +1,12 @@
 mppi_controller:
   ros__parameters:
     sim: false
-    dt: 0.2
-    horizon: 12
+    dt: 0.1
+    horizon: 24
     num_samples: 5000
     num_iterations: 100
     cost_weights:
-      control_cost_weight: 2.0
+      control_cost_weight: 6.0
       goal_cost_weight: 3.0
       terminal_goal_cost_weight: 3.0
       obstacle_cost_weight: 9.0

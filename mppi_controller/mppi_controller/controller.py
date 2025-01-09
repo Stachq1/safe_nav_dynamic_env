@@ -61,7 +61,7 @@ class MPPIController(Node):
         self.curr_state = np.array([])
         self.goal = np.array([])
         self.obstacles = []
-        self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
+        self.prev_controls = np.random.normal(0, 0.25, size=(self.horizon, 2))
 
     def obstacle_callback(self, msg: EllipsoidArray):
         self.obstacles = []
