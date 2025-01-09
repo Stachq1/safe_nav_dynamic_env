@@ -13,7 +13,9 @@ def generate_launch_description():
 
     # List of topics to record
     topics_to_record = [
-        '/mppi_visualization',
+        '/robot_state',
+        '/robot_goal',
+        '/robot_trajectory',
         '/Odometry',
         '/obstacles',
         '/best_controls',
