@@ -156,7 +156,7 @@ class MPPIController(Node):
             id=0,
             type=Marker.SPHERE,
             action=Marker.ADD,
-            pose=Pose(position=Point(x=-state[1], y=state[0], z=0.0)),
+            pose=Pose(position=Point(x=state[0], y=state[1], z=0.0)),
             scale=Vector3(x=0.1, y=0.1, z=0.1),
             color=ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
         )
@@ -168,7 +168,7 @@ class MPPIController(Node):
             id=1,
             type=Marker.SPHERE,
             action=Marker.ADD,
-            pose=Pose(position=Point(x=-self.goal[1], y=self.goal[0], z=0.0)),
+            pose=Pose(position=Point(x=-self.goal[0], y=self.goal[1], z=0.0)),
             scale=Vector3(x=0.1, y=0.1, z=0.1),
             color=ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)
         )
@@ -194,7 +194,7 @@ class MPPIController(Node):
         )
 
         # Add points from the trajectory (z = 0 for 2D)
-        marker.points = [Point(x=-state[1], y=state[0], z=0.0) for state in trajectory]
+        marker.points = [Point(x=state[0], y=state[1], z=0.0) for state in trajectory]
 
         # Publish the trajectory marker
         self.robot_traj_vis_publisher_.publish(marker)
