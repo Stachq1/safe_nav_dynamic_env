@@ -9,8 +9,8 @@ motion_detector_node:
     num_threads: 0  # Uses hardware concurrency if set to 0
     queue_size: 20
     pointcloud_topic: '/cloud_registered_body'
-    global_frame_name: 'body_lidar'
-    sensor_frame_name: ''
+    global_frame_name: 'camera_init'
+    sensor_frame_name: 'body_lidar'
     shutdown_after: 10  # Number of evaluations.
 
     # Preprocessing.
