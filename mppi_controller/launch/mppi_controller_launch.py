@@ -19,7 +19,8 @@ def generate_launch_description():
         '/best_controls',
         '/ellipsoids',
         '/detections/cluster/dynamic',
-        '/clusters'
+        '/cloud_registered_body',
+        '/tf'
     ]
 
     return LaunchDescription([
