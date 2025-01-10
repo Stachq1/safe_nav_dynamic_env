@@ -171,7 +171,7 @@ class MPPIController(Node):
             action=Marker.ADD,
             pose=Pose(position=Point(x=state[0], y=state[1], z=0.0)),
             scale=Vector3(x=0.1, y=0.1, z=0.1),
-            color=ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
+            color=ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0)
         )
 
         # Visualize the goal as a blue sphere (or any other color/shape)
@@ -255,6 +255,8 @@ class MPPIController(Node):
                 msg.pose.position.x = obs.center[0]
                 msg.pose.position.y = obs.center[1]
                 msg.pose.position.z = 0.0
+
+                msg.color=ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
 
                 # Add the marker to the MarkerArray
                 marker_array.markers.append(msg)
