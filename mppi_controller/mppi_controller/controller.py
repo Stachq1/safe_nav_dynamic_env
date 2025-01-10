@@ -59,7 +59,7 @@ class MPPIController(Node):
         self.robot_state_vis_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
         self.robot_goal_vis_publisher_ = self.create_publisher(Marker, '/robot_goal', 10)
         self.robot_traj_vis_publisher_ = self.create_publisher(Marker, '/robot_trajectory', 10)
-        self.obstacle_vis_publisher_ = self.create_publisher(Marker, '/ellipsoids', 10)
+        self.obstacle_vis_publisher_ = self.create_publisher(MarkerArray, '/ellipsoids', 10)
         self.control_publisher = self.create_publisher(Twist, '/best_controls', 10)
         self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
