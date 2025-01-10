@@ -1,12 +1,9 @@
 import rclpy
 from rclpy.node import Node
-import tf2_ros
-import tf_transformations
 import numpy as np
 import time
 
 from geometry_msgs.msg import Pose, Point, Vector3, Twist, Quaternion
-from tf2_geometry_msgs import PointStamped
 from mppi_controller.obstacle import Obstacle
 from nav_msgs.msg import Odometry
 from ellipsoid_msgs.msg import EllipsoidArray, Ellipsoid
@@ -54,8 +51,6 @@ class MPPIController(Node):
         blocking_stand(self.robot_command_client, timeout_sec=10)
 
         # Initialize ROS publishers and subscribers
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
         self.robot_state_vis_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
         self.robot_goal_vis_publisher_ = self.create_publisher(Marker, '/robot_goal', 10)
         self.robot_traj_vis_publisher_ = self.create_publisher(Marker, '/robot_trajectory', 10)
@@ -73,21 +68,11 @@ class MPPIController(Node):
 
     def remove_robot_obstacle(self, obstacle):
         # Create a PointStamped message for the obstacle center in the world frame
-        world_point = PointStamped()
-        world_point.header.frame_id = 'camera_init'
-        world_point.header.stamp = self.get_clock().now().to_msg()
-        world_point.point.x = obstacle.center[0]
-        world_point.point.y = obstacle.center[1]
+        if self.curr_state.size == 0:
+            return True
 
-        # Lookup the transform from 'world' to 'sensor'
-        try:
-            transform = self.tf_buffer.lookup_transform('body_lidar', 'camera_init', rclpy.time.Time())
-        except tf2_ros.TransformException as ex:
-            self.get_logger().info(f'Could not transform point!')
-        # Transform the point
-        sensor_point = self.tf_buffer.transform(world_point, 'body_lidar', timeout=rclpy.duration.Duration(seconds=1.0))
-
-        distance = np.sqrt(sensor_point.point.x ** 2 + sensor_point.point.y ** 2)
+        # Do not consider the obstacle if it is too close to the robot (could be just misclassification)
+        distance = np.linalg.norm(self.curr_state[:2] - obstacle.center)
         return distance <= 0.4
 
     def obstacle_callback(self, msg: EllipsoidArray):
