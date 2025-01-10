@@ -80,7 +80,10 @@ class MPPIController(Node):
         world_point.point.y = obstacle.center[1]
 
         # Lookup the transform from 'world' to 'sensor'
-        transform = self.tf_buffer.lookup_transform('body_lidar', 'camera_init', rclpy.time.Time())
+        try:
+            transform = self.tf_buffer.lookup_transform('body_lidar', 'camera_init', rclpy.time.Time())
+        except tf2_ros.TransformException as ex:
+            self.get_logger().info(f'Could not transform point!')
         # Transform the point
         sensor_point = self.tf_buffer.transform(world_point, 'body_lidar', timeout=rclpy.duration.Duration(seconds=1.0))
 
