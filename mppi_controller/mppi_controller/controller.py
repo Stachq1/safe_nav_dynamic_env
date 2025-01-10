@@ -53,8 +53,8 @@ class MPPIController(Node):
         blocking_stand(self.robot_command_client, timeout_sec=10)
 
         # Initialize ROS publishers and subscribers
-        tf_buffer = tf2_ros.Buffer()
-        tf_listener = tf2_ros.TransformListener(tf_buffer)
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
         self.robot_state_vis_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
         self.robot_goal_vis_publisher_ = self.create_publisher(Marker, '/robot_goal', 10)
         self.robot_traj_vis_publisher_ = self.create_publisher(Marker, '/robot_trajectory', 10)
