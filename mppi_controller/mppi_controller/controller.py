@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import numpy as np
+import tf_transformations
 import time
 
 from geometry_msgs.msg import Pose, Point, Vector3, Twist, Quaternion
@@ -216,7 +217,7 @@ class MPPIController(Node):
         id = 0
 
         for obs in obstacles:
-            if not np.allclose(obs.enlarged_a_matrix, 0) and not np.allclose(obs.mvce_center, 0):
+            if not np.allclose(obs.enlarged_a_matrix, 0) and not np.allclose(obs.center, 0):
                 # Create a new Marker message
                 msg = Marker()
                 msg.action = Marker.ADD
