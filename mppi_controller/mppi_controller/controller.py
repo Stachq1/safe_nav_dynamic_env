@@ -83,7 +83,7 @@ class MPPIController(Node):
         y = msg.pose.pose.position.y
         orientation = msg.pose.pose.orientation
         # Convert the quaternion to yaw angle
-        yaw = self.quaternion_to_euler(orientation)
+        yaw = (self.quaternion_to_euler(orientation) + (3 * np.pi / 2)) % (2 * np.pi) - np.pi
         self.curr_state = np.array([x, y, yaw])
         if self.goal.size == 0:
             self.goal = np.array([x, y, yaw])
