@@ -82,7 +82,7 @@ class MPPIController(Node):
         # Lookup the transform from 'world' to 'sensor'
         transform = self.tf_buffer.lookup_transform('body_lidar', 'camera_init', rclpy.time.Time())
         # Transform the point
-        sensor_point = self.tf_buffer.transform(world_point, 'sensor', timeout=rclpy.duration.Duration(seconds=1.0))
+        sensor_point = self.tf_buffer.transform(world_point, 'body_lidar', timeout=rclpy.duration.Duration(seconds=1.0))
 
         distance = np.sqrt(sensor_point.point.x ** 2 + sensor_point.point.y ** 2)
         return distance <= 0.4
