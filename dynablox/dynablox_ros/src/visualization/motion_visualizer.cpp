@@ -49,7 +49,7 @@ void MotionVisualizer::setupRos() {
   point_slice_pub_ = nh_->create_publisher<visualization_msgs::msg::Marker>("slice/points", qos_profile);
   cluster_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("clusters", qos_profile);
   ellipsoid_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("ellipsoids", qos_profile);
-  trajectory_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/ellipsoid_trajectories", qos_profile);
+  trajectory_vis_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("ellipsoid_trajectories", qos_profile);
 }
 
 void MotionVisualizer::visualizeAll(const Cloud& cloud,
@@ -73,8 +73,8 @@ void MotionVisualizer::visualizeAll(const Cloud& cloud,
   // visualizeTsdfSlice(slice_height);
   // visualizeSlicePoints(cloud, cloud_info);
   visualizeClusters(clusters);
-  visualizeEllipsoids(clusters);
-  visualizeTrajectories(clusters, 0.1, 20);
+  // visualizeEllipsoids(clusters);
+  // visualizeTrajectories(clusters, 0.1, 20);
   time_stamp_set_ = false;
 }
 
