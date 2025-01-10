@@ -74,7 +74,7 @@ class MPPIController(Node):
 
         # Do not consider the obstacle if it is too close to the robot (could be just misclassification)
         distance = np.linalg.norm(self.curr_state[:2] - obstacle.center)
-        return distance <= 0.4
+        return distance <= 0.3
 
     def obstacle_callback(self, msg: EllipsoidArray):
         self.obstacles = []

@@ -2,7 +2,7 @@ import numpy as np
 from ellipsoid_msgs.msg import Ellipsoid
 
 class Obstacle:
-    def __init__(self, msg: Ellipsoid, enlargement_radius=2.0):
+    def __init__(self, msg: Ellipsoid, enlargement_radius=0.5):
         """
         Initialize the Obstacle class by enlarging the ellipsoid.
 
@@ -28,12 +28,12 @@ class Obstacle:
         # Decompose the matrix to extract the ellipse parameters
         eigenvalues, eigenvectors = np.linalg.eig(a_matrix)
 
-        # Scale the eigenvalues to enlarge the ellipsoid
-        scaled_eigenvalues = eigenvalues + enlargement_radius
+        # Calculate the new semi-axis lengths by accounting for the robot radius
+        enlarged_l = np.diag(1 / np.sqrt(eigenvalues) + enlargement_radius) ** 2
 
         # Reconstruct the enlarged matrix
-        enlarged_matrix = eigenvectors @ np.diag(scaled_eigenvalues) @ np.linalg.inv(eigenvectors)
-        return enlarged_matrix
+        A_enlarged = eigenvectors @ np.linalg.inv(enlarged_l) @ eigenvectors.T
+        return A_enlarged
 
     def get_trajectory(self, horizon, dt):
         """
