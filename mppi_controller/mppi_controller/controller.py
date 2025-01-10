@@ -246,7 +246,10 @@ class MPPIController(Node):
                 # Orientation: Compute quaternion for 2D rotation
                 angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
                 quaternion = tf_transformations.quaternion_from_euler(0, 0, angle)
-                msg.pose.orientation = Quaternion(*quaternion)
+                msg.pose.orientation.x = quaternion[0]
+                msg.pose.orientation.y = quaternion[1]
+                msg.pose.orientation.z = quaternion[2]
+                msg.pose.orientation.w = quaternion[3]
 
                 # Position: Set the center in 2D, z is 0
                 msg.pose.position.x = obs.center[0]
