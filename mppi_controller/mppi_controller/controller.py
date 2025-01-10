@@ -1,14 +1,16 @@
 import rclpy
 from rclpy.node import Node
+import tf2_ros
+import tf_transformations
 import numpy as np
 import time
 
-from geometry_msgs.msg import Pose, Point, Vector3, Twist
+from geometry_msgs.msg import Pose, Point, PointStamped, Vector3, Twist, Quaternion
 from mppi_controller.obstacle import Obstacle
 from nav_msgs.msg import Odometry
 from ellipsoid_msgs.msg import EllipsoidArray, Ellipsoid
 from std_msgs.msg import ColorRGBA, Header
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import Marker, MarkerArray
 
 # SPOT
 from bosdyn.client.robot_command import RobotCommandBuilder, RobotCommandClient, blocking_stand
@@ -51,9 +53,12 @@ class MPPIController(Node):
         blocking_stand(self.robot_command_client, timeout_sec=10)
 
         # Initialize ROS publishers and subscribers
+        tf_buffer = tf2_ros.Buffer()
+        tf_listener = tf2_ros.TransformListener(tf_buffer)
         self.robot_state_vis_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
         self.robot_goal_vis_publisher_ = self.create_publisher(Marker, '/robot_goal', 10)
         self.robot_traj_vis_publisher_ = self.create_publisher(Marker, '/robot_trajectory', 10)
+        self.obstacle_vis_publisher_ = self.create_publisher(Marker, '/ellipsoids', 10)
         self.control_publisher = self.create_publisher(Twist, '/best_controls', 10)
         self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
@@ -65,11 +70,29 @@ class MPPIController(Node):
         self.obstacles = []
         self.prev_controls = np.random.normal(0, 0.25, size=(self.horizon, 2))
 
+    def remove_robot_obstacle(self, obstacle):
+        # Create a PointStamped message for the obstacle center in the world frame
+        world_point = PointStamped()
+        world_point.header.frame_id = 'camera_init'
+        world_point.header.stamp = self.get_clock().now().to_msg()
+        world_point.point.x = obstacle.center[0]
+        world_point.point.y = obstacle.center[1]
+
+        # Lookup the transform from 'world' to 'sensor'
+        transform = self.tf_buffer.lookup_transform('body_lidar', 'camera_init', rclpy.time.Time())
+        # Transform the point
+        sensor_point = self.tf_buffer.transform(world_point, 'sensor', timeout=rclpy.duration.Duration(seconds=1.0))
+
+        distance = np.sqrt(sensor_point.point.x ** 2 + sensor_point.point.y ** 2)
+        return distance <= 0.4
+
     def obstacle_callback(self, msg: EllipsoidArray):
         self.obstacles = []
         for obs_msg in msg.ellipsoids:
             # Convert each ellipsoid message into an ellipsoid object
-            self.obstacles.append(Obstacle(obs_msg))
+            obs = Obstacle(obs_msg)
+            if not self.remove_robot_obstacle(obs):
+                self.obstacles.append(Obstacle(obs_msg))
         return
 
     def quaternion_to_euler(self, quaternion):
@@ -199,6 +222,53 @@ class MPPIController(Node):
         # Publish the trajectory marker
         self.robot_traj_vis_publisher_.publish(marker)
 
+    def visualize_ellipsoids(self, obstacles):
+        marker_array = MarkerArray()
+        id = 0
+
+        for obs in obstacles:
+            if not np.allclose(obs.enlarged_a_matrix, 0) and not np.allclose(obs.mvce_center, 0):
+                # Create a new Marker message
+                msg = Marker()
+                msg.action = Marker.ADD
+                msg.type = Marker.SPHERE
+                msg.id = id
+                id += 1
+                msg.header.stamp = self.get_clock().now().to_msg()
+                msg.header.frame_id = "camera_init"
+
+                # Compute the visualization of the ellipsoid
+                eigenvalues, eigenvectors = np.linalg.eigh(obs.enlarged_a_matrix)
+
+                # Ensure positive definiteness of the matrix
+                if np.any(eigenvalues <= 0):
+                    continue
+
+                # Semi-axis lengths in 2D
+                scales = np.array([1.0 / np.sqrt(eigenvalues[0]),
+                                   1.0 / np.sqrt(eigenvalues[1])])
+
+                # Scale: Use 2D scales for x and y, and set z to a small flat value
+                msg.scale.x = scales[0] * 2.0  # Diameter in x
+                msg.scale.y = scales[1] * 2.0  # Diameter in y
+                msg.scale.z = 0.01  # Flat in z
+
+                # Orientation: Compute quaternion for 2D rotation
+                angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
+                quaternion = tf_transformations.quaternion_from_euler(0, 0, angle)
+                msg.pose.orientation = Quaternion(*quaternion)
+
+                # Position: Set the center in 2D, z is 0
+                msg.pose.position.x = obs.center[0]
+                msg.pose.position.y = obs.center[1]
+                msg.pose.position.z = 0.0
+
+                # Add the marker to the MarkerArray
+                marker_array.markers.append(msg)
+
+        # Publish the MarkerArray
+        self.obstacle_vis_publisher_.publish(marker_array)
+
     def update_state(self):
         # Wait for the current state and goal to be initialized
         if self.curr_state.size == 0 or self.goal.size == 0:
@@ -235,6 +305,7 @@ class MPPIController(Node):
         # Visualize the state
         self.visualize_robot_and_goal(state)
         self.visualize_trajectory(best_trajectory)
+        self.visualize_ellipsoids(obstacles)
 
         # if self.at_goal() and rclpy.ok():
             # If at goal, sit down and shutdown the node
