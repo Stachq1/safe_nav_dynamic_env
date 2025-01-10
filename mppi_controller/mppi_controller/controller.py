@@ -5,7 +5,8 @@ import tf_transformations
 import numpy as np
 import time
 
-from geometry_msgs.msg import Pose, Point, PointStamped, Vector3, Twist, Quaternion
+from geometry_msgs.msg import Pose, Point, Vector3, Twist, Quaternion
+from tf2_geometry_msgs import PointStamped
 from mppi_controller.obstacle import Obstacle
 from nav_msgs.msg import Odometry
 from ellipsoid_msgs.msg import EllipsoidArray, Ellipsoid
