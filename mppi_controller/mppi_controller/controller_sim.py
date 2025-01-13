@@ -1,13 +1,14 @@
 import rclpy
 from rclpy.node import Node
 import numpy as np
+import tf_transformations
 import time
 
 from geometry_msgs.msg import Pose, Point, Vector3
 from mppi_controller.obstacle import Obstacle
 from ellipsoid_msgs.msg import EllipsoidArray, Ellipsoid
 from std_msgs.msg import ColorRGBA, Header
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import Marker, MarkerArray
 
 class MPPIControllerSim(Node):
     def __init__(self):
@@ -16,6 +17,8 @@ class MPPIControllerSim(Node):
         self.robot_state_vis_publisher_ = self.create_publisher(Marker, '/robot_state', 10)
         self.robot_goal_vis_publisher_ = self.create_publisher(Marker, '/robot_goal', 10)
         self.robot_traj_vis_publisher_ = self.create_publisher(Marker, '/robot_trajectory', 10)
+        self.obstacle_vis_publisher_ = self.create_publisher(MarkerArray, '/ellipsoids', 10)
+        self.trajectory_vis_publisher_ = self.create_publisher(MarkerArray, '/ellipsoid_trajectories', 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
 
         # Parameter handling
@@ -114,7 +117,7 @@ class MPPIControllerSim(Node):
     def at_goal(self):
         return np.linalg.norm(self.curr_state[:2] - self.goal[:2]) < 0.1
 
-    def visualize_robot_and_goal(self):
+    def visualize_robot_and_goal(self, state):
         # Create and initialize the Marker for the robot (a small sphere)
         header = Header()
         header.stamp = self.get_clock().now().to_msg()
@@ -127,9 +130,9 @@ class MPPIControllerSim(Node):
             id=0,
             type=Marker.SPHERE,
             action=Marker.ADD,
-            pose=Pose(position=Point(x=self.curr_state[0], y=self.curr_state[1], z=0.0)),
+            pose=Pose(position=Point(x=state[0], y=state[1], z=0.0)),
             scale=Vector3(x=0.1, y=0.1, z=0.1),
-            color=ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
+            color=ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0)
         )
 
         # Visualize the goal as a blue sphere (or any other color/shape)
@@ -139,7 +142,7 @@ class MPPIControllerSim(Node):
             id=1,
             type=Marker.SPHERE,
             action=Marker.ADD,
-            pose=Pose(position=Point(x=self.goal[0], y=self.goal[1], z=0.0)),
+            pose=Pose(position=Point(x=-self.goal[0], y=self.goal[1], z=0.0)),
             scale=Vector3(x=0.1, y=0.1, z=0.1),
             color=ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)
         )
@@ -148,7 +151,7 @@ class MPPIControllerSim(Node):
         self.robot_state_vis_publisher_.publish(robot_marker)
         self.robot_goal_vis_publisher_.publish(goal_marker)
 
-    def visualize_trajectory(self, trajectory):
+    def visualize_robot_trajectory(self, trajectory):
         # Create and initialize the Marker for the trajectory (line strip)
         header = Header()
         header.stamp = self.get_clock().now().to_msg()
@@ -169,6 +172,91 @@ class MPPIControllerSim(Node):
 
         # Publish the trajectory marker
         self.robot_traj_vis_publisher_.publish(marker)
+
+    def visualize_ellipsoids(self, obstacles):
+        marker_array = MarkerArray()
+        id = 0
+
+        for obs in obstacles:
+            if not np.allclose(obs.enlarged_a_matrix, 0) and not np.allclose(obs.center, 0):
+                # Create a new Marker message
+                msg = Marker()
+                msg.action = Marker.ADD
+                msg.type = Marker.SPHERE
+                msg.id = id
+                id += 1
+                msg.header.stamp = self.get_clock().now().to_msg()
+                msg.header.frame_id = "map"
+
+                # Compute the visualization of the ellipsoid
+                eigenvalues, eigenvectors = np.linalg.eigh(obs.enlarged_a_matrix)
+
+                # Ensure positive definiteness of the matrix
+                if np.any(eigenvalues <= 0):
+                    continue
+
+                # Semi-axis lengths in 2D
+                scales = np.array([1.0 / np.sqrt(eigenvalues[0]),
+                                   1.0 / np.sqrt(eigenvalues[1])])
+
+                # Scale: Use 2D scales for x and y, and set z to a small flat value
+                msg.scale.x = scales[0] * 2.0  # Diameter in x
+                msg.scale.y = scales[1] * 2.0  # Diameter in y
+                msg.scale.z = 0.01  # Flat in z
+
+                # Orientation: Compute quaternion for 2D rotation
+                angle = np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0])
+                quaternion = tf_transformations.quaternion_from_euler(0, 0, angle)
+                msg.pose.orientation.x = quaternion[0]
+                msg.pose.orientation.y = quaternion[1]
+                msg.pose.orientation.z = quaternion[2]
+                msg.pose.orientation.w = quaternion[3]
+
+                # Position: Set the center in 2D, z is 0
+                msg.pose.position.x = obs.center[0]
+                msg.pose.position.y = obs.center[1]
+                msg.pose.position.z = 0.0
+
+                msg.color=ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
+
+                # Add the marker to the MarkerArray
+                marker_array.markers.append(msg)
+
+        # Publish the MarkerArray
+        self.obstacle_vis_publisher_.publish(marker_array)
+
+
+    def visualize_obstacle_trajectories(self, obstacles):
+        marker_array = MarkerArray()
+        marker_id = 0
+
+        for obstacle in obstacles:
+            if not (obstacle.velocity == 0).all() and not (obstacle.center == 0).all():
+                line_strip = Marker()
+                line_strip.header = Header(
+                    stamp=self.get_clock().now().to_msg(),
+                    frame_id="map"
+                )
+                line_strip.ns = "trajectory"
+                line_strip.id = marker_id
+                line_strip.type = Marker.LINE_STRIP
+                line_strip.action = Marker.ADD
+                line_strip.scale.x = 0.05  # Width of the line in meters
+                line_strip.color = self.setColor((1.0, 0.0, 0.0))  # Example color (red)
+
+                position = obstacle.center.copy()
+                velocity = obstacle.velocity
+
+                for _ in range(self.horizon + 1):
+                    point = Point()
+                    point.x, point.y, point.z = position[0], position[1], 0.0
+                    line_strip.points.append(point)
+                    position += velocity * self.dt
+
+                marker_array.markers.append(line_strip)
+                marker_id += 1
+
+        self.trajectory_vis_publisher_.publish(marker_array)
 
     def update_state(self):
         # Get current obstacles (create a deep copy)
