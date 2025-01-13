@@ -300,7 +300,7 @@ class MPPIControllerSim(Node):
 
         # Visualize the state
         self.visualize_robot_and_goal(self.curr_state)
-        self.visualize_trajectory(best_trajectory)
+        self.visualize_robot_trajectory(best_trajectory)
         self.visualize_ellipsoids(obstacles)
         self.visualize_obstacle_trajectories(obstacles)
 
