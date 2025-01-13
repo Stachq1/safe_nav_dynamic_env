@@ -20,6 +20,7 @@ def generate_launch_description():
         '/obstacles',
         '/best_controls',
         '/ellipsoids',
+        '/ellipsoid_trajectories',
         '/detections/cluster/dynamic',
         '/cloud_registered_body',
         '/tf'
