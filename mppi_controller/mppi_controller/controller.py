@@ -335,6 +335,7 @@ class MPPIController(Node):
         self.visualize_robot_and_goal(state)
         self.visualize_robot_trajectory(best_trajectory)
         self.visualize_ellipsoids(obstacles)
+        self.visualize_obstacle_trajectories(obstacles)
 
         # if self.at_goal() and rclpy.ok():
             # If at goal, sit down and shutdown the node

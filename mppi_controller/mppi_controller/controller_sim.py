@@ -47,10 +47,13 @@ class MPPIControllerSim(Node):
         self.goal = np.array([5.0, -5.0, 0.0])
         self.curr_state = self.initial_state.copy()
         self.obstacles = []
-        self.prev_controls = np.random.normal(0, 1.0, size=(self.horizon, 2))
+        self.prev_controls = np.random.normal(0, 0.25, size=(self.horizon, 2))
+
+        # Collision variables
         self.num_collisions = 0
         self.total_collisions = 0
         self.current_iteration = 0
+        self.collision_history = []
 
         # Initialize the timer for updating the state
         self.timer = self.create_timer(self.dt, self.update_state)
@@ -263,11 +266,18 @@ class MPPIControllerSim(Node):
         obstacles = np.copy(self.obstacles)
 
         # Check if there are currently any collisions
-        for obs in obstacles:
-            if obs.check_collision(self.curr_state[:2]):
-                self.num_collisions += 1
-                self.total_collisions += 1  # Increment total collisions
-                self.get_logger().warn(f"Collision detected!")
+        current_collision = any(obs.check_collision(self.curr_state[:2]) for obs in obstacles)
+
+        # Check for collisions before updating history
+        if current_collision and not any(self.collision_history):
+            self.num_collisions += 1
+            self.total_collisions += 1
+            self.get_logger().warn(f"Collision detected!")
+
+        # Update collision buffer
+        self.collision_history.append(current_collision)
+        if len(self.collision_history) > 10:
+            self.collision_history.pop(0)  # Keep size at most 10
 
         # Sample trajectories
         trajectories, controls = self.sample_trajectories()
@@ -285,7 +295,7 @@ class MPPIControllerSim(Node):
         self.curr_state = self.curr_state.flatten()
 
         # Apply random disturbance to position (x, y)
-        disturbance = np.random.normal(0, 0.001, size=self.curr_state.shape)
+        disturbance = np.random.normal(0, 0.002, size=self.curr_state.shape)
         self.curr_state = self.curr_state + disturbance
 
         # Visualize the state
