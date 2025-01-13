@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
     ros-humble-pcl-ros \
     ros-humble-pcl-conversions \
     ros-humble-rviz2 \
+    ros-humble-tf-transformations \
     python3-pip
 
 # Install the pip packages related to SPOT
