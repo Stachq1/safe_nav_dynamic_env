@@ -56,6 +56,7 @@ class MPPIController(Node):
         self.robot_goal_vis_publisher_ = self.create_publisher(Marker, '/robot_goal', 10)
         self.robot_traj_vis_publisher_ = self.create_publisher(Marker, '/robot_trajectory', 10)
         self.obstacle_vis_publisher_ = self.create_publisher(MarkerArray, '/ellipsoids', 10)
+        self.trajectory_vis_publisher_ = self.create_publisher(MarkerArray, '/ellipsoid_trajectories', 10)
         self.control_publisher = self.create_publisher(Twist, '/best_controls', 10)
         self.odometry_subscriber = self.create_subscription(Odometry, '/Odometry', self.odometry_callback, 10)
         self.obstacle_subscriber_ = self.create_subscription(EllipsoidArray, '/obstacles', self.obstacle_callback, 10)
@@ -190,7 +191,7 @@ class MPPIController(Node):
         self.robot_state_vis_publisher_.publish(robot_marker)
         self.robot_goal_vis_publisher_.publish(goal_marker)
 
-    def visualize_trajectory(self, trajectory):
+    def visualize_robot_trajectory(self, trajectory):
         # Create and initialize the Marker for the trajectory (line strip)
         header = Header()
         header.stamp = self.get_clock().now().to_msg()
@@ -264,6 +265,39 @@ class MPPIController(Node):
         # Publish the MarkerArray
         self.obstacle_vis_publisher_.publish(marker_array)
 
+
+    def visualize_obstacle_trajectories(self, obstacles):
+        marker_array = MarkerArray()
+        marker_id = 0
+
+        for obstacle in obstacles:
+            if not (obstacle.velocity == 0).all() and not (obstacle.center == 0).all():
+                line_strip = Marker()
+                line_strip.header = Header(
+                    stamp=self.get_clock().now().to_msg(),
+                    frame_id="camera_init"
+                )
+                line_strip.ns = "trajectory"
+                line_strip.id = marker_id
+                line_strip.type = Marker.LINE_STRIP
+                line_strip.action = Marker.ADD
+                line_strip.scale.x = 0.05  # Width of the line in meters
+                line_strip.color = self.setColor((1.0, 0.0, 0.0))  # Example color (red)
+
+                position = obstacle.center.copy()
+                velocity = obstacle.velocity
+
+                for _ in range(self.horizon + 1):
+                    point = Point()
+                    point.x, point.y, point.z = position[0], position[1], 0.0
+                    line_strip.points.append(point)
+                    position += velocity * self.dt
+
+                marker_array.markers.append(line_strip)
+                marker_id += 1
+
+        self.trajectory_vis_publisher_.publish(marker_array)
+
     def update_state(self):
         # Wait for the current state and goal to be initialized
         if self.curr_state.size == 0 or self.goal.size == 0:
@@ -299,7 +333,7 @@ class MPPIController(Node):
 
         # Visualize the state
         self.visualize_robot_and_goal(state)
-        self.visualize_trajectory(best_trajectory)
+        self.visualize_robot_trajectory(best_trajectory)
         self.visualize_ellipsoids(obstacles)
 
         # if self.at_goal() and rclpy.ok():
