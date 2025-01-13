@@ -244,8 +244,8 @@ class MPPIControllerSim(Node):
                 line_strip.id = marker_id
                 line_strip.type = Marker.LINE_STRIP
                 line_strip.action = Marker.ADD
-                line_strip.scale.x = 0.05  # Width of the line in meters
-                line_strip.color = self.setColor((1.0, 0.0, 0.0))  # Example color (red)
+                line_strip.scale = Vector3(x=0.05, y=0.05, z=0.05)
+                line_strip.color = ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)
 
                 position = obstacle.center.copy()
                 velocity = obstacle.velocity
