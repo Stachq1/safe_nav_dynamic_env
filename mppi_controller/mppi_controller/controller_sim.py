@@ -299,8 +299,10 @@ class MPPIControllerSim(Node):
         self.curr_state = self.curr_state + disturbance
 
         # Visualize the state
-        self.visualize_robot_and_goal()
+        self.visualize_robot_and_goal(self.curr_state)
         self.visualize_trajectory(best_trajectory)
+        self.visualize_ellipsoids(obstacles)
+        self.visualize_obstacle_trajectories(obstacles)
 
         if self.at_goal() and rclpy.ok():
             self.current_iteration += 1
